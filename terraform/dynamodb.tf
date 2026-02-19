@@ -39,3 +39,35 @@ resource "aws_dynamodb_table" "click_log" {
     Name = "${var.project_name}-click-log-${var.environment}"
   }
 }
+
+# Deduplication table — enforces one click per user per button.
+# Primary key: user_id (hash) + button_id (range) is unique by definition,
+# so a conditional put_item will fail if the pair already exists.
+resource "aws_dynamodb_table" "click_dedup" {
+  name         = "${var.project_name}-click-dedup-${var.environment}"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "button_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "button_id"
+    type = "S"
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  tags = {
+    Name = "${var.project_name}-click-dedup-${var.environment}"
+  }
+}

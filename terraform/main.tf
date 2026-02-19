@@ -12,14 +12,12 @@ terraform {
     }
   }
 
-  # Uncomment and configure once you have an S3 bucket for remote state.
-  # backend "s3" {
-  #   bucket         = "peoples-scoreboard-tfstate"
-  #   key            = "infra/terraform.tfstate"
-  #   region         = var.aws_region
-  #   dynamodb_table = "peoples-scoreboard-tflock"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket  = "peoples-scoreboard-tfstate"
+    key     = "infra/terraform.tfstate"
+    region  = "us-east-1"
+    encrypt = true
+  }
 }
 
 provider "aws" {

@@ -1,0 +1,20 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit it.
+
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "peoples-scoreboard"
+
+# Leave blank to use the auto-generated CloudFront domain (good for dev).
+domain_name = ""
+
+# Update these once you know your CloudFront URL.
+cognito_callback_urls = [
+  "http://localhost:3000/callback",
+  "https://dmmywcvdfo0fv.cloudfront.net/callback.html",
+]
+
+cognito_logout_urls = [
+  "http://localhost:3000",
+  "https://dmmywcvdfo0fv.cloudfront.net",
+]

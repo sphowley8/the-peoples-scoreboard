@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net;
+                 style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+                 connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com;
+                 font-src 'self' data:;
+                 img-src 'self' data:;">
+  <title>My Profile — The People's Scoreboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/auth.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col">
+
+  <!-- Nav -->
+  <nav class="w-full px-6 py-4 flex items-center justify-between border-b border-gray-800">
+    <a href="/" class="text-xl font-bold tracking-tight text-white hover:text-indigo-400 transition">
+      🗳️ The People's Scoreboard
+    </a>
+    <button onclick="logout()"
+            class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-semibold transition">
+      Sign Out
+    </button>
+  </nav>
+
+  <!-- Profile Content -->
+  <main class="flex-1 flex flex-col items-center px-6 py-16 gap-10"
+        x-data="profilePage()"
+        x-init="init()"
+        x-cloak>
+
+    <!-- Redirect if not logged in -->
+    <template x-if="!loggedIn">
+      <div class="text-gray-400">
+        You must be signed in to view this page.
+        <a :href="loginUrl" class="text-indigo-400 underline ml-1">Sign in</a>
+      </div>
+    </template>
+
+    <template x-if="loggedIn">
+      <div class="w-full max-w-2xl flex flex-col gap-8">
+
+        <!-- Avatar + Name -->
+        <div class="flex items-center gap-6">
+          <div class="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-3xl font-black"
+               x-text="initials"></div>
+          <div>
+            <h1 class="text-3xl font-extrabold" x-text="email"></h1>
+            <p class="text-gray-500 text-sm mt-1">Member since <span x-text="memberSince"></span></p>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-gray-900 rounded-2xl p-6 flex flex-col gap-1 border border-gray-800">
+            <p class="text-4xl font-black text-indigo-400" x-text="stats.totalClicks">—</p>
+            <p class="text-sm text-gray-500">Total Unsubscribes</p>
+          </div>
+          <div class="bg-gray-900 rounded-2xl p-6 flex flex-col gap-1 border border-gray-800">
+            <p class="text-4xl font-black text-green-400" x-text="stats.rank">—</p>
+            <p class="text-sm text-gray-500">Global Rank</p>
+          </div>
+          <div class="bg-gray-900 rounded-2xl p-6 flex flex-col gap-1 border border-gray-800">
+            <p class="text-4xl font-black text-yellow-400" x-text="stats.streak">—</p>
+            <p class="text-sm text-gray-500">Day Streak</p>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-800">
+            <h2 class="font-bold text-lg">Recent Activity</h2>
+          </div>
+          <template x-if="activity.length === 0">
+            <p class="px-6 py-8 text-gray-600 text-sm text-center">No activity yet — go cast your first vote!</p>
+          </template>
+          <ul>
+            <template x-for="item in activity" :key="item.event_id">
+              <li class="flex items-center justify-between px-6 py-4 border-b border-gray-800 last:border-0">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">🚫</span>
+                  <div>
+                    <p class="text-sm font-semibold" x-text="item.button_id"></p>
+                    <p class="text-xs text-gray-500" x-text="item.target_url"></p>
+                  </div>
+                </div>
+                <span class="text-xs text-gray-600" x-text="formatDate(item.timestamp)"></span>
+              </li>
+            </template>
+          </ul>
+        </div>
+
+      </div>
+    </template>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 text-center text-xs text-gray-700 border-t border-gray-900">
+    The People's Scoreboard &copy; 2025 — Built for accountability.
+  </footer>
+
+  <script>
+    function profilePage() {
+      return {
+        loggedIn:    isLoggedIn(),
+        loginUrl:    getLoginUrl(),
+        email:       "",
+        initials:    "",
+        memberSince: "",
+        stats: {
+          totalClicks: "…",
+          rank:        "—",
+          streak:      "—",
+        },
+        activity: [],
+
+        async init() {
+          if (!this.loggedIn) return;
+
+          const user = getCurrentUser();
+          this.email    = user?.email ?? "User";
+          this.initials = this.email.slice(0, 2).toUpperCase();
+
+          const createdAt = user?.["custom:created_at"] || user?.iat;
+          this.memberSince = createdAt
+            ? new Date(createdAt * 1000).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+            : "Unknown";
+
+          // Fetch real user activity from API
+          try {
+            const res = await fetch(`${CONFIG.apiEndpoint}/user-activity?limit=20`, {
+              headers: { "Authorization": getIdToken() },
+            });
+            const data = await res.json();
+            this.activity = data.items ?? [];
+            this.stats.totalClicks = data.count ?? 0;
+          } catch {
+            this.activity = [];
+          }
+        },
+
+        formatDate(ts) {
+          return new Date(ts).toLocaleDateString("en-US", {
+            month: "short", day: "numeric", year: "numeric",
+          });
+        },
+      };
+    }
+  </script>
+
+</body>
+</html>

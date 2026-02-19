@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net;
+                 style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+                 connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com;
+                 font-src 'self' data:;
+                 img-src 'self' data:;">
+  <title>The People's Scoreboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/auth.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    body { font-family: 'Courier New', Courier, monospace; }
+    .section-label {
+      display: inline-block;
+      border: 2px solid #facc15;
+      color: #facc15;
+      font-weight: 900;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      text-transform: uppercase;
+    }
+    .unsubscribe-link {
+      color: #818cf8;
+      text-decoration: underline;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .unsubscribe-link:hover { color: #a5b4fc; }
+    .unsubscribe-link.voted {
+      color: #4ade80;
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col text-sm">
+
+  <!-- Nav -->
+  <nav class="w-full px-6 py-4 flex items-center justify-between border-b border-gray-800">
+    <span class="text-base font-black tracking-tight text-white uppercase">
+      🗳️ The People's Scoreboard
+    </span>
+    <div x-data="navAuth()" x-cloak>
+      <template x-if="!loggedIn">
+        <div class="flex items-center gap-3">
+          <a :href="signUpUrl" class="px-3 py-1.5 border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-gray-950 text-xs font-bold uppercase tracking-wider transition">
+            Create Account
+          </a>
+          <a :href="loginUrl" class="px-3 py-1.5 border border-gray-600 text-gray-400 hover:border-gray-300 hover:text-white text-xs font-bold uppercase tracking-wider transition">
+            Sign In
+          </a>
+        </div>
+      </template>
+      <template x-if="loggedIn">
+        <div class="flex items-center gap-4">
+          <a href="profile.html" class="text-xs text-gray-400 hover:text-white transition" x-text="userEmail"></a>
+          <button @click="logout()" class="px-3 py-1.5 border border-gray-600 text-gray-400 hover:border-gray-300 hover:text-white text-xs font-bold uppercase tracking-wider transition">
+            Sign Out
+          </button>
+        </div>
+      </template>
+    </div>
+  </nav>
+
+  <main class="flex-1 flex flex-col">
+
+    <!-- WHY RESIST AND UNSUBSCRIBE — blue/indigo hero section -->
+    <section class="bg-indigo-700 px-8 py-12 flex flex-col gap-6">
+      <div class="section-label">Why Resist and Unsubscribe</div>
+
+      <div class="max-w-4xl flex flex-col gap-4 text-sm leading-relaxed text-indigo-100">
+        <p>
+          Americans are feeling powerless to thwart the Trump administration's assault on our nation's values.
+          Praised by tech CEOs, surrounded by sycophants, and enriched by his return to the White House,
+          the president's actions march on unchecked. Americans, however, have a powerful weapon that has been hiding in plain sight.
+        </p>
+        <p>
+          First, we must recognize that the president is unfazed by citizen outrage, the courts, or the media.
+          He responds to one thing: the market. The most potent weapon to resist the administration is a targeted,
+          month-long national economic strike — a coordinated campaign that attacks tech companies and firms enabling ICE —
+          to inflict maximum damage with minimal impact on consumers. In sum, the shortest path to change without hurting
+          consumers is an economic strike targeted at the companies driving the markets and enabling our president.
+        </p>
+        <p class="italic text-indigo-200">— Scott Galloway</p>
+      </div>
+
+      <!-- Global counter -->
+      <div x-data="globalCounter()" class="mt-4 flex flex-col gap-1">
+        <p class="text-4xl font-black tabular-nums text-yellow-400" x-text="count.toLocaleString()">0</p>
+        <p class="text-xs text-indigo-300 uppercase tracking-widest">total unsubscribes recorded on this site</p>
+      </div>
+
+      <!-- Auth CTA -->
+      <div x-data="{ loggedIn: isLoggedIn(), loginUrl: getLoginUrl(), signUpUrl: getSignUpUrl() }" x-cloak>
+        <template x-if="!loggedIn">
+          <div class="flex flex-col gap-2 mt-2">
+            <a :href="signUpUrl" class="inline-block px-6 py-3 bg-yellow-400 text-gray-950 font-black uppercase text-xs tracking-wider hover:bg-yellow-300 transition w-fit">
+              Create Account to Track Your Unsubscribes →
+            </a>
+            <p class="text-xs text-indigo-300">
+              Already have an account?
+              <a :href="loginUrl" class="underline hover:text-white">Sign in</a>
+            </p>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- HOW TO RESIST -->
+    <section class="px-8 py-12 flex flex-col gap-10">
+      <div class="section-label">How to Resist</div>
+
+      <!-- GROUND ZERO -->
+      <div class="flex flex-col gap-6">
+        <h2 class="text-2xl font-black uppercase tracking-tight text-white">Ground Zero</h2>
+        <p class="text-gray-400 max-w-2xl">
+          These are the subscription-driven consumer tech companies we have identified as having outsized influence over the national economy and our president.
+        </p>
+
+        <!-- Company grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-10 mt-4">
+
+          <!-- Amazon -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">amazon</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('amazon-prime', 'https://www.amazon.com/amazonprime')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Amazon Prime
+                <span x-data="linkCounter('amazon-prime')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('audible', 'https://help.audible.com/s/article/cancel-membership?language=en_US')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Audible
+                <span x-data="linkCounter('audible')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('amazon-music', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GCRZL3F2UZMNP3T3')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Amazon Music
+                <span x-data="linkCounter('amazon-music')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('prime-video', 'https://www.primevideo.com/help?nodeId=GWGDSNXVPJ93UW5V')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Prime Video
+                <span x-data="linkCounter('prime-video')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('amazon-grocery', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=T0o47frAQPUyjKryun')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Amazon Grocery
+                <span x-data="linkCounter('amazon-grocery')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('kindle-unlimited', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLSQ4722655M4ZEJ')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Kindle Unlimited
+                <span x-data="linkCounter('kindle-unlimited')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Apple -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">🍎 Apple</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('apple-music', 'https://support.apple.com/en-us/118399')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Apple Music
+                <span x-data="linkCounter('apple-music')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('apple-news', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Apple News+
+                <span x-data="linkCounter('apple-news')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('apple-tv', 'https://support.apple.com/en-us/118398')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Apple TV
+                <span x-data="linkCounter('apple-tv')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('apple-one', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Apple One
+                <span x-data="linkCounter('apple-one')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('apple-fitness', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Apple Fitness+
+                <span x-data="linkCounter('apple-fitness')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('apple-arcade', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Apple Arcade
+                <span x-data="linkCounter('apple-arcade')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li>
+                <span class="text-yellow-400 mr-1">▪</span>
+                <span class="text-gray-400">Avoid purchasing Apple hardware products</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Google -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Google</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('youtube-premium', 'https://support.google.com/youtube/answer/6308278')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from YouTube Premium
+                <span x-data="linkCounter('youtube-premium')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('youtube-music', 'https://support.google.com/youtube/answer/6308278')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from YouTube Music
+                <span x-data="linkCounter('youtube-music')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('youtube-tv', 'https://www.youtube.com/paid_memberships')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from YouTube TV
+                <span x-data="linkCounter('youtube-tv')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('google-one', 'https://support.google.com/googleone/answer/9056360?hl=en&co=GENIE.Platform%3DAndroid')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Google One
+                <span x-data="linkCounter('google-one')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Microsoft -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Microsoft</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('microsoft-office', 'https://support.microsoft.com/en-us/account-billing/cancel-your-microsoft-subscription-c2c6b0e3-cab3-cb98-d83e-c9ad54620530')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Microsoft Office
+                <span x-data="linkCounter('microsoft-office')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('xbox-gamepass', 'https://support.xbox.com/en-US/help/subscriptions-billing/manage-subscriptions/cancel-recurring-billing-or-subscription')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Xbox Game Pass
+                <span x-data="linkCounter('xbox-gamepass')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('linkedin-premium', 'https://www.linkedin.com/help/linkedin/answer/a545578')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from LinkedIn Premium
+                <span x-data="linkCounter('linkedin-premium')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Paramount+ -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Paramount+</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('paramount-plus', 'https://support.paramountplus.com/s/article/PI-How-do-I-cancel-my-subscription?language=da')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Paramount+
+                <span x-data="linkCounter('paramount-plus')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+        </div><!-- end ground zero grid row 1 -->
+
+        <!-- Row 2: Meta, Uber, Netflix, OpenAI, X -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-10 mt-6">
+
+          <!-- Meta -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Meta*</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('whatsapp', 'https://faq.whatsapp.com/2138577903196467/?cms_platform=android')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Delete</a> WhatsApp
+                <span x-data="linkCounter('whatsapp')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('facebook', 'https://www.facebook.com/help/154908788002686')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Delete</a> Facebook
+                <span x-data="linkCounter('facebook')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Uber -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Uber</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('uber-one', 'https://help.uber.com/en/ubereats/restaurants/article/how-do-i-cancel-my-uber-one-membership?nodeId=b386f2df-2321-484f-99ee-95fda95b57a3')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Uber One
+                <span x-data="linkCounter('uber-one')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Netflix -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">NETFLIX</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('netflix', 'https://help.netflix.com/en/node/407')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from Netflix
+                <span x-data="linkCounter('netflix')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- OpenAI -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">OpenAI</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('chatgpt-plus', 'https://help.openai.com/en/articles/7232927-how-do-i-cancel-my-chatgpt-subscription')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from ChatGPT Plus/Team
+                <span x-data="linkCounter('chatgpt-plus')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- X -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">𝕏</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('x-premium', 'https://help.x.com/en/using-x/x-premium#tbcancel')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Unsubscribe</a> from X Premium
+                <span x-data="linkCounter('x-premium')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+        </div><!-- end ground zero row 2 -->
+
+        <!-- Instagram note -->
+        <p class="text-gray-500 text-xs max-w-4xl mt-4">
+          * Hey, we'd boycott Instagram too if we could, but we need it to get this message to you.
+          Share this message widely on Instagram, encourage your friends to repost, get everyone on board.
+          But while you're on the platform, do not click any ads and do not shop any brands that you see from links on the platform.
+        </p>
+      </div>
+
+      <!-- BLAST ZONE -->
+      <div class="flex flex-col gap-6 mt-8">
+        <h2 class="text-2xl font-black uppercase tracking-tight text-white">Blast Zone</h2>
+        <p class="text-gray-400 max-w-2xl">
+          These are the consumer-facing companies that we have identified as active enablers of ICE.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mt-4">
+
+          <!-- AT&T -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">AT&amp;T</p>
+            <p class="text-gray-500 text-xs mb-2">Awarded <span class="text-yellow-400 font-bold">$90M</span> to provide ICE with IT and network projects</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('att-wireless', 'https://www.att.com/buy/broadband/cancel-service.html')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Cancel</a> wireless services
+                <span x-data="linkCounter('att-wireless')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li><span class="text-yellow-400 mr-1">▪</span><span class="text-gray-400">Switch to alternative carriers</span></li>
+              <li><span class="text-yellow-400 mr-1">▪</span><span class="text-gray-400">Avoid upgrading devices through AT&amp;T</span></li>
+            </ul>
+          </div>
+
+          <!-- Comcast -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Comcast</p>
+            <p class="text-gray-500 text-xs mb-2">The company holds an ICE award to provide the agency with broadcast cable at five "regional war rooms"</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('comcast', 'https://www.xfinity.com/support/articles/how-to-cancel-xfinity-service')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Cancel</a> cable / internet subscription
+                <span x-data="linkCounter('comcast')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li><span class="text-yellow-400 mr-1">▪</span><span class="text-gray-400">Avoid Xfinity services</span></li>
+            </ul>
+          </div>
+
+          <!-- Charter Communications -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Charter Communications</p>
+            <p class="text-gray-500 text-xs mb-2">Provides cable and internet services for ICE's Homeland Security Investigations Field Office in Beaumont, Texas</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('charter', 'https://www.spectrum.net/support/manage-account/how-cancel-spectrum-services')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Cancel</a> Spectrum internet / cable
+                <span x-data="linkCounter('charter')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Dell -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Dell</p>
+            <p class="text-gray-500 text-xs mb-2">Awarded <span class="text-yellow-400 font-bold">$18M</span> ICE contract</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('dell', 'https://www.dell.com')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Boycott</a> Dell products
+                <span x-data="linkCounter('dell')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- FedEx -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">FedEx</p>
+            <p class="text-gray-500 text-xs mb-2">Awarded <span class="text-yellow-400 font-bold">$2.3M</span> ICE contract</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('fedex', 'https://www.fedex.com')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Boycott</a> FedEx
+                <span x-data="linkCounter('fedex')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Home Depot -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Home Depot</p>
+            <p class="text-gray-500 text-xs mb-2">ICE enabler</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('home-depot', 'https://www.homedepot.com')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Boycott</a> Home Depot
+                <span x-data="linkCounter('home-depot')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Lowe's -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Lowe's</p>
+            <p class="text-gray-500 text-xs mb-2">Using AI powered license plate readers in their parking lots and feeding this data into law enforcement surveillance systems accessible to ICE</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('lowes', 'https://www.lowes.com')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Stop shopping</a> at Lowe's
+                <span x-data="linkCounter('lowes')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Marriott -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">Marriott</p>
+            <p class="text-gray-500 text-xs mb-2">ICE uses Marriott chain to detain immigrants</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('marriott', 'https://www.marriott.com')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Book</a> with alternative hotel chains
+                <span x-data="linkCounter('marriott')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+              <li x-data="linkAction('marriott-bonvoy', 'https://loyalty.marriott.com/en-US/account/profile')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Cancel</a> Bonvoy membership
+                <span x-data="linkCounter('marriott-bonvoy')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- UPS -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xl font-black text-white mb-1">UPS</p>
+            <p class="text-gray-500 text-xs mb-2">Small package delivery contract with ICE</p>
+            <ul class="flex flex-col gap-1">
+              <li x-data="linkAction('ups', 'https://www.ups.com')">
+                <span class="text-yellow-400 mr-1">▪</span>
+                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="unsubscribe-link">Use alternative</a> shipping services (USPS, local couriers)
+                <span x-data="linkCounter('ups')" class="text-gray-600 text-xs">(<span x-text="count">0</span>)</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- JOIN THE RESISTANCE -->
+      <div class="flex flex-col gap-6 mt-8">
+        <h2 class="text-2xl font-black uppercase tracking-tight text-white">Join the Resistance</h2>
+        <ul class="flex flex-col gap-3 max-w-2xl">
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Check out Scott Galloway's Instagram story and use the "Add Yours" sticker to share your own cancellations</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Add hashtags <span class="text-white font-bold">#resistandunsubscribe</span> and <span class="text-white font-bold">#ResistICE</span></span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Tag <span class="text-white font-bold">@profgalloway</span> on Instagram</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Challenge your friends and spread the word — every cancellation counts</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">
+              <a href="https://www.instagram.com/stories/profgalloway/" target="_blank" rel="noopener noreferrer" class="text-indigo-400 underline hover:text-indigo-300">
+                View Scott's Instagram story →
+              </a>
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- WHAT SCOTT'S DONE THUS FAR -->
+      <div class="flex flex-col gap-6 mt-8">
+        <h2 class="text-2xl font-black uppercase tracking-tight text-white">What Scott's Done Thus Far</h2>
+        <p class="text-gray-400 text-xs uppercase tracking-widest">February cancellations</p>
+        <ul class="flex flex-col gap-3 max-w-2xl">
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Unsubscribed from <span class="text-white font-bold">Amazon Prime</span></span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Unsubscribed from <span class="text-white font-bold">Uber</span></span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Rejected ad sponsorship from <span class="text-white font-bold">Apple</span> for February</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Unsubscribed from <span class="text-white font-bold">Apple TV+</span></span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Unsubscribed from <span class="text-white font-bold">Amazon One</span></span>
+          </li>
+          <li class="flex gap-3">
+            <span class="text-yellow-400 font-black mt-0.5">▪</span>
+            <span class="text-gray-300">Cancelled corporate <span class="text-white font-bold">ChatGPT</span> account</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Share CTA -->
+      <div class="mt-12 border border-yellow-400 p-6 flex flex-col gap-3 max-w-2xl">
+        <p class="text-yellow-400 font-black uppercase text-sm tracking-wider">Share Your Cancellations</p>
+        <p class="text-gray-400 text-xs leading-relaxed">
+          Post your cancellation on Instagram and tag
+          <span class="text-white font-bold">@profgalloway</span> with the hashtag
+          <span class="text-white font-bold">#ResistAndUnsubscribe</span>.
+          Every share amplifies the movement.
+        </p>
+        <a href="https://www.instagram.com/stories/profgalloway/" target="_blank" rel="noopener noreferrer"
+           class="inline-block px-6 py-2 bg-yellow-400 text-gray-950 font-black uppercase text-xs tracking-wider hover:bg-yellow-300 transition w-fit">
+          Share on Instagram →
+        </a>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 px-8 text-xs text-gray-700 border-t border-gray-900">
+    The People's Scoreboard &copy; 2025 — Built for accountability.
+  </footer>
+
+  <script>
+    const ALL_BUTTON_IDS = [
+      "amazon-prime","audible","amazon-music","prime-video","amazon-grocery","kindle-unlimited",
+      "apple-music","apple-news","apple-tv","apple-one","apple-fitness","apple-arcade",
+      "whatsapp","facebook",
+      "youtube-premium","youtube-music","youtube-tv","google-one",
+      "microsoft-office","xbox-gamepass","linkedin-premium",
+      "paramount-plus","uber-one","netflix","chatgpt-plus","x-premium",
+      "att-wireless","comcast","charter","dell","fedex","home-depot",
+      "lowes","marriott","marriott-bonvoy","ups",
+    ];
+
+    // ─── Shared user votes cache ──────────────────────────────────────────────
+    let _votedButtons = null;
+    async function getVotedButtons() {
+      if (_votedButtons !== null) return _votedButtons;
+      if (!isLoggedIn()) return (_votedButtons = []);
+      try {
+        const res  = await fetch(`${CONFIG.apiEndpoint}/user-votes`, {
+          headers: { "Authorization": getIdToken() },
+        });
+        const data = await res.json();
+        _votedButtons = data.voted_buttons ?? [];
+      } catch {
+        _votedButtons = [];
+      }
+      return _votedButtons;
+    }
+
+    // ─── Nav ──────────────────────────────────────────────────────────────────
+    function navAuth() {
+      return {
+        loggedIn:  isLoggedIn(),
+        loginUrl:  getLoginUrl(),
+        signUpUrl: getSignUpUrl(),
+        userEmail: getCurrentUser()?.email ?? "",
+      };
+    }
+
+    // ─── Global counter ───────────────────────────────────────────────────────
+    function globalCounter() {
+      return {
+        count: 0,
+        async init() {
+          try {
+            const results = await Promise.all(
+              ALL_BUTTON_IDS.map(id =>
+                fetch(`${CONFIG.apiEndpoint}/click-count?button_id=${id}`)
+                  .then(r => r.json()).then(d => d.count ?? 0).catch(() => 0)
+              )
+            );
+            this.count = results.reduce((a, b) => a + b, 0);
+          } catch { this.count = 0; }
+        },
+      };
+    }
+
+    // ─── Per-link counter ─────────────────────────────────────────────────────
+    function linkCounter(buttonId) {
+      return {
+        count: 0,
+        async init() {
+          try {
+            const res  = await fetch(`${CONFIG.apiEndpoint}/click-count?button_id=${buttonId}`);
+            const data = await res.json();
+            this.count = data.count ?? 0;
+          } catch { this.count = 0; }
+        },
+      };
+    }
+
+    // ─── Per-link click + redirect ────────────────────────────────────────────
+    function linkAction(buttonId, targetUrl) {
+      return {
+        loggedIn: isLoggedIn(),
+        buttonId,
+        url:      targetUrl,
+        clicked:  false,
+
+        async init() {
+          if (!this.loggedIn) return;
+          const voted = await getVotedButtons();
+          if (voted.includes(this.buttonId)) this.clicked = true;
+        },
+
+        async handleClick() {
+          window.open(this.url, "_blank", "noopener,noreferrer");
+          if (this.clicked || !this.loggedIn) return;
+          try {
+            const res = await apiPost("/log-click", {
+              button_id:  this.buttonId,
+              target_url: this.url,
+            });
+            if (res.error === "Already voted") { this.clicked = true; return; }
+            this.clicked = true;
+            if (_votedButtons) _votedButtons.push(this.buttonId);
+          } catch { /* silently fail — link already opened */ }
+        },
+      };
+    }
+  </script>
+
+</body>
+</html>
