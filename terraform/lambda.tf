@@ -53,6 +53,7 @@ resource "aws_iam_role_policy" "lambda_dynamo" {
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:Query",
+          "dynamodb:Scan",
         ]
         Resource = [
           aws_dynamodb_table.click_dedup.arn,
@@ -158,6 +159,45 @@ resource "aws_lambda_permission" "apigw_get_user_votes" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.get_user_votes.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}
+
+resource "aws_lambda_function" "get_leaderboard" {
+  function_name    = "${var.project_name}-get-leaderboard-${var.environment}"
+  role             = aws_iam_role.lambda_exec.arn
+  filename         = data.archive_file.log_click.output_path
+  source_code_hash = data.archive_file.log_click.output_base64sha256
+  handler          = "get_leaderboard.handler"
+  runtime          = "python3.12"
+  timeout          = 30
+
+  environment {
+    variables = {
+      DEDUP_TABLE  = aws_dynamodb_table.click_dedup.name
+      USER_POOL_ID = aws_cognito_user_pool.main.id
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_cognito_leaderboard" {
+  name = "cognito-list-users"
+  role = aws_iam_role.lambda_exec.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["cognito-idp:ListUsers"]
+      Resource = aws_cognito_user_pool.main.arn
+    }]
+  })
+}
+
+resource "aws_lambda_permission" "apigw_get_leaderboard" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_leaderboard.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
 }

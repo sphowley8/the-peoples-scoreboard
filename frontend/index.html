@@ -105,6 +105,54 @@
       border: none;
       border-top: 1px solid rgba(0,0,0,0.12);
     }
+
+    /* Tab navigation */
+    .tab-btn {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 2px solid rgba(250,204,21,0.3);
+      color: #94a3b8;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover {
+      border-color: #facc15;
+      color: #facc15;
+    }
+    .tab-btn.active {
+      background: #facc15;
+      border-color: #facc15;
+      color: #0f172a;
+    }
+
+    /* Leaderboard table */
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .lb-table th {
+      text-align: left;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #64748b;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0.5rem 0.75rem;
+    }
+    .lb-table td {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: #cbd5e1;
+    }
+    .lb-table tr:first-child td { color: #facc15; font-weight: 900; }
+    .lb-table tr:nth-child(2) td { color: #e2e8f0; font-weight: 700; }
+    .lb-table tr:nth-child(3) td { color: #94a3b8; font-weight: 700; }
+    .lb-table tr:hover td { background: rgba(255,255,255,0.02); }
   </style>
 </head>
 <body class="bg-slate-950 text-gray-200 min-h-screen flex flex-col text-sm">
@@ -141,8 +189,8 @@
 
   <main class="flex-1 flex flex-col">
 
-    <!-- ═══ HERO ═══════════════════════════════════════════════════════════ -->
-    <section class="relative px-8 py-16 flex flex-col gap-8 overflow-hidden"
+    <!-- ═══ HERO + COUNTER ════════════════════════════════════════════════ -->
+    <section class="relative px-8 py-12 flex flex-col gap-6 overflow-hidden"
              style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);">
 
       <!-- Subtle grid overlay -->
@@ -151,10 +199,7 @@
                                     repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.3) 39px,rgba(255,255,255,.3) 40px);">
       </div>
 
-      <div class="relative flex flex-col gap-8 max-w-5xl">
-
-        <!-- Section tag -->
-        <div class="section-label">Why Resist and Unsubscribe</div>
+      <div class="relative flex flex-col gap-4 max-w-5xl">
 
         <!-- ── GLOBAL COUNTER ── -->
         <div x-data="globalCounter()" class="flex flex-col gap-1">
@@ -165,7 +210,32 @@
           </p>
         </div>
 
-        <!-- Manifesto text -->
+      </div>
+
+      <!-- ── TAB TOOLBAR ── -->
+      <div class="relative flex flex-wrap gap-2 max-w-5xl">
+        <button class="tab-btn active" data-tab="why" onclick="setTab('why')">
+          Why Unsubscribe?
+        </button>
+        <button class="tab-btn" data-tab="unsubscribe" onclick="setTab('unsubscribe')">
+          Unsubscribe Now
+        </button>
+        <button class="tab-btn" data-tab="leaderboards" onclick="setTab('leaderboards')">
+          Leaderboards
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ═══ TAB PAGES ════════════════════════════════════════════════════ -->
+    <div id="tab-root">
+
+      <!-- ── WHY UNSUBSCRIBE? ── -->
+      <section id="tab-why" class="relative px-8 py-14 flex flex-col gap-8 max-w-5xl"
+               style="background: #0f172a;">
+
+        <div class="section-label">Why Resist and Unsubscribe</div>
+
         <div class="flex flex-col gap-4 text-sm leading-loose text-slate-300 max-w-3xl">
           <p>
             Americans are feeling powerless to thwart the Trump administration's assault on our nation's values.
@@ -183,504 +253,491 @@
           </p>
         </div>
 
-        <!-- Auth CTA -->
-        <div x-data="{ loggedIn: isLoggedIn(), loginUrl: getLoginUrl(), signUpUrl: getSignUpUrl() }" x-cloak>
-          <template x-if="!loggedIn">
-            <div class="flex flex-col gap-2">
-              <a :href="signUpUrl"
-                 class="inline-block px-6 py-3 bg-yellow-400 text-slate-950 font-black uppercase text-xs tracking-wider hover:bg-yellow-300 transition w-fit">
-                Create Account to Track Your Actions →
-              </a>
-              <p class="text-xs text-slate-500">
-                Already have an account?
-                <a :href="loginUrl" class="underline text-slate-400 hover:text-white">Sign in</a>
-              </p>
+      </section>
+
+      <!-- ── UNSUBSCRIBE NOW ── -->
+      <section id="tab-unsubscribe" class="px-8 py-14 flex flex-col gap-14 bg-yellow-400 text-slate-950" style="display:none;">
+        <div class="section-label-dark">How to Resist</div>
+
+        <!-- ── GROUND ZERO ── -->
+        <div class="flex flex-col gap-6">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Ground Zero</h2>
+            <p class="text-slate-700 text-xs max-w-2xl leading-relaxed">
+              Subscription-driven consumer tech companies with outsized influence over the national economy and our president.
+            </p>
+          </div>
+
+          <!-- Row 1: Amazon, Apple, Google, Microsoft, Paramount+ -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+
+            <!-- Amazon -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">amazon</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('amazon-prime', 'https://www.amazon.com/amazonprime')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Amazon Prime</span>
+                  <span x-data="linkCounter('amazon-prime')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('audible', 'https://help.audible.com/s/article/cancel-membership?language=en_US')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Audible</span>
+                  <span x-data="linkCounter('audible')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('amazon-music', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GCRZL3F2UZMNP3T3')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Amazon Music</span>
+                  <span x-data="linkCounter('amazon-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('prime-video', 'https://www.primevideo.com/help?nodeId=GWGDSNXVPJ93UW5V')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Prime Video</span>
+                  <span x-data="linkCounter('prime-video')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('amazon-grocery', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=T0o47frAQPUyjKryun')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Amazon Grocery</span>
+                  <span x-data="linkCounter('amazon-grocery')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('kindle-unlimited', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLSQ4722655M4ZEJ')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Kindle Unlimited</span>
+                  <span x-data="linkCounter('kindle-unlimited')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Apple -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Apple</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('apple-music', 'https://support.apple.com/en-us/118399')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Apple Music</span>
+                  <span x-data="linkCounter('apple-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('apple-news', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Apple News+</span>
+                  <span x-data="linkCounter('apple-news')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('apple-tv', 'https://support.apple.com/en-us/118398')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Apple TV+</span>
+                  <span x-data="linkCounter('apple-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('apple-one', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Apple One</span>
+                  <span x-data="linkCounter('apple-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('apple-fitness', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Apple Fitness+</span>
+                  <span x-data="linkCounter('apple-fitness')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('apple-arcade', 'https://support.apple.com/en-us/118428?device-type=mac')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Apple Arcade</span>
+                  <span x-data="linkCounter('apple-arcade')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li>
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <span class="text-slate-700">Avoid purchasing Apple hardware</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Google -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Google</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('youtube-premium', 'https://support.google.com/youtube/answer/6308278')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from YouTube Premium</span>
+                  <span x-data="linkCounter('youtube-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('youtube-music', 'https://support.google.com/youtube/answer/6308278')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from YouTube Music</span>
+                  <span x-data="linkCounter('youtube-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('youtube-tv', 'https://www.youtube.com/paid_memberships')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from YouTube TV</span>
+                  <span x-data="linkCounter('youtube-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('google-one', 'https://support.google.com/googleone/answer/9056360?hl=en&co=GENIE.Platform%3DAndroid')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Google One</span>
+                  <span x-data="linkCounter('google-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Microsoft -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Microsoft</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('microsoft-office', 'https://support.microsoft.com/en-us/account-billing/cancel-your-microsoft-subscription-c2c6b0e3-cab3-cb98-d83e-c9ad54620530')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Microsoft Office</span>
+                  <span x-data="linkCounter('microsoft-office')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('xbox-gamepass', 'https://support.xbox.com/en-US/help/subscriptions-billing/manage-subscriptions/cancel-recurring-billing-or-subscription')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Xbox Game Pass</span>
+                  <span x-data="linkCounter('xbox-gamepass')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('linkedin-premium', 'https://www.linkedin.com/help/linkedin/answer/a545578')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from LinkedIn Premium</span>
+                  <span x-data="linkCounter('linkedin-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Paramount+ -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Paramount+</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('paramount-plus', 'https://support.paramountplus.com/s/article/PI-How-do-I-cancel-my-subscription?language=da')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Paramount+</span>
+                  <span x-data="linkCounter('paramount-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+          </div><!-- /row 1 -->
+
+          <!-- Row 2: Meta, Uber, Netflix, OpenAI, X -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+
+            <!-- Meta -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Meta*</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('whatsapp', 'https://faq.whatsapp.com/2138577903196467/?cms_platform=android')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Delete</a>
+                  <span class="text-slate-700"> WhatsApp</span>
+                  <span x-data="linkCounter('whatsapp')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('facebook', 'https://www.facebook.com/help/154908788002686')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Delete</a>
+                  <span class="text-slate-700"> Facebook</span>
+                  <span x-data="linkCounter('facebook')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Uber -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Uber</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('uber-one', 'https://help.uber.com/en/ubereats/restaurants/article/how-do-i-cancel-my-uber-one-membership?nodeId=b386f2df-2321-484f-99ee-95fda95b57a3')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Uber One</span>
+                  <span x-data="linkCounter('uber-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Netflix -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Netflix</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('netflix', 'https://help.netflix.com/en/node/407')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from Netflix</span>
+                  <span x-data="linkCounter('netflix')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- OpenAI -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">OpenAI</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('chatgpt-plus', 'https://help.openai.com/en/articles/7232927-how-do-i-cancel-my-chatgpt-subscription')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from ChatGPT Plus/Team</span>
+                  <span x-data="linkCounter('chatgpt-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- X -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">𝕏</p>
+              <ul class="flex flex-col gap-1.5">
+                <li x-data="linkAction('x-premium', 'https://help.x.com/en/using-x/x-premium#tbcancel')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
+                  <span class="text-slate-700"> from X Premium</span>
+                  <span x-data="linkCounter('x-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+          </div><!-- /row 2 -->
+
+          <!-- Instagram footnote -->
+          <p class="text-slate-600 text-xs max-w-3xl leading-relaxed border-l-2 border-slate-400 pl-4">
+            * Hey, we'd boycott Instagram too if we could, but we need it to get this message to you.
+            Share widely, encourage friends to repost. But while you're on the platform, do not click any ads
+            and do not shop any brands you see linked there.
+          </p>
+        </div>
+
+        <hr class="section-divider-dark" />
+
+        <!-- ── BLAST RADIUS ── -->
+        <div class="flex flex-col gap-6">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Blast Radius</h2>
+            <p class="text-slate-700 text-xs max-w-2xl leading-relaxed">
+              Consumer-facing companies identified as active enablers of ICE.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <!-- AT&T -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-base font-black text-slate-950 tracking-tight">AT&amp;T</p>
+                <span class="text-xs font-black text-slate-700 whitespace-nowrap">$90M contract</span>
+              </div>
+              <p class="text-slate-700 text-xs leading-relaxed">Awarded to provide ICE with IT and network projects</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('att-wireless', 'https://www.att.com/buy/broadband/cancel-service.html')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
+                  <span class="text-slate-700"> wireless services</span>
+                  <span x-data="linkCounter('att-wireless')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li><span class="text-slate-700 mr-1 text-xs">▪</span><span class="text-slate-700">Switch to alternative carriers</span></li>
+                <li><span class="text-slate-700 mr-1 text-xs">▪</span><span class="text-slate-700">Avoid upgrading devices through AT&amp;T</span></li>
+              </ul>
+            </div>
+
+            <!-- Comcast -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Comcast</p>
+              <p class="text-slate-700 text-xs leading-relaxed">Holds an ICE award to provide broadcast cable at five "regional war rooms"</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('comcast', 'https://www.xfinity.com/support/articles/how-to-cancel-xfinity-service')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
+                  <span class="text-slate-700"> cable / internet subscription</span>
+                  <span x-data="linkCounter('comcast')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li><span class="text-slate-700 mr-1 text-xs">▪</span><span class="text-slate-700">Avoid Xfinity services</span></li>
+              </ul>
+            </div>
+
+            <!-- Charter -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Charter Communications</p>
+              <p class="text-slate-700 text-xs leading-relaxed">Provides cable and internet for ICE's Homeland Security Investigations Field Office in Beaumont, TX</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('charter', 'https://www.spectrum.net/support/manage-account/how-cancel-spectrum-services')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
+                  <span class="text-slate-700"> Spectrum internet / cable</span>
+                  <span x-data="linkCounter('charter')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Dell -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-base font-black text-slate-950 tracking-tight">Dell</p>
+                <span class="text-xs font-black text-slate-700 whitespace-nowrap">$18M contract</span>
+              </div>
+              <p class="text-slate-700 text-xs leading-relaxed">Awarded ICE contract for hardware and services</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('dell', 'https://www.dell.com')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Boycott</a>
+                  <span class="text-slate-700"> Dell products</span>
+                  <span x-data="linkCounter('dell')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- FedEx -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-base font-black text-slate-950 tracking-tight">FedEx</p>
+                <span class="text-xs font-black text-slate-700 whitespace-nowrap">$2.3M contract</span>
+              </div>
+              <p class="text-slate-700 text-xs leading-relaxed">Awarded ICE delivery contract</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('fedex', 'https://www.fedex.com')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Boycott</a>
+                  <span class="text-slate-700"> FedEx — use USPS or UPS alternatives</span>
+                  <span x-data="linkCounter('fedex')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Home Depot -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Home Depot</p>
+              <p class="text-slate-700 text-xs leading-relaxed">ICE enabler and donor to campaigns supporting deportation policies</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('home-depot', 'https://www.homedepot.com')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Boycott</a>
+                  <span class="text-slate-700"> Home Depot</span>
+                  <span x-data="linkCounter('home-depot')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Lowe's -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Lowe's</p>
+              <p class="text-slate-700 text-xs leading-relaxed">Using AI-powered license plate readers in parking lots, feeding data into law enforcement surveillance systems accessible to ICE</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('lowes', 'https://www.lowes.com')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Stop shopping</a>
+                  <span class="text-slate-700"> at Lowe's</span>
+                  <span x-data="linkCounter('lowes')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Marriott -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Marriott</p>
+              <p class="text-slate-700 text-xs leading-relaxed">ICE uses Marriott properties to detain immigrants</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('marriott', 'https://www.marriott.com')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Book</a>
+                  <span class="text-slate-700"> with alternative hotel chains</span>
+                  <span x-data="linkCounter('marriott')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+                <li x-data="linkAction('marriott-bonvoy', 'https://loyalty.marriott.com/en-US/account/profile')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
+                  <span class="text-slate-700"> Bonvoy membership</span>
+                  <span x-data="linkCounter('marriott-bonvoy')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- UPS -->
+            <div class="company-card-yellow flex flex-col gap-2">
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">UPS</p>
+              <p class="text-slate-700 text-xs leading-relaxed">Small package delivery contract with ICE</p>
+              <ul class="flex flex-col gap-1.5 mt-1">
+                <li x-data="linkAction('ups', 'https://www.ups.com')">
+                  <span class="text-slate-700 mr-1 text-xs">▪</span>
+                  <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Use alternative</a>
+                  <span class="text-slate-700"> shipping (USPS, local couriers)</span>
+                  <span x-data="linkCounter('ups')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── LEADERBOARDS ── -->
+      <section id="tab-leaderboards" class="px-8 py-14 flex flex-col gap-8 bg-slate-950" style="display:none;">
+
+        <div class="section-label">Leaderboards</div>
+
+        <div class="flex flex-col gap-2 max-w-2xl">
+          <h2 class="text-2xl font-black uppercase tracking-tight text-white">Top Resisters</h2>
+          <p class="text-slate-500 text-xs leading-relaxed">
+            Ranked by total actions taken. Updated in real time.
+          </p>
+        </div>
+
+        <div x-data="leaderboard()" class="max-w-2xl">
+
+          <!-- Loading state -->
+          <template x-if="loading">
+            <p class="text-slate-600 text-xs uppercase tracking-widest animate-pulse">Loading leaderboard...</p>
+          </template>
+
+          <!-- Error state -->
+          <template x-if="!loading && error">
+            <p class="text-slate-600 text-xs">Could not load leaderboard data.</p>
+          </template>
+
+          <!-- Empty state -->
+          <template x-if="!loading && !error && rows.length === 0">
+            <p class="text-slate-600 text-xs">No actions recorded yet. Be the first!</p>
+          </template>
+
+          <!-- Table -->
+          <template x-if="!loading && !error && rows.length > 0">
+            <div>
+              <table class="lb-table">
+                <thead>
+                  <tr>
+                    <th style="width:3rem;">Rank</th>
+                    <th>User</th>
+                    <th style="width:6rem; text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="row in rows" :key="row.rank">
+                    <tr>
+                      <td x-text="'#' + row.rank"></td>
+                      <td x-text="row.display"></td>
+                      <td style="text-align:right; font-variant-numeric: tabular-nums;" x-text="row.actions.toLocaleString()"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+              <p class="text-slate-700 text-xs mt-4" x-text="rows.length + ' participants'"></p>
             </div>
           </template>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ═══ HOW TO RESIST — YELLOW BACKGROUND ════════════════════════════ -->
-    <section class="px-8 py-14 flex flex-col gap-14 bg-yellow-400 text-slate-950">
-      <div class="section-label-dark">How to Resist</div>
-
-      <!-- ── GROUND ZERO ── -->
-      <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Ground Zero</h2>
-          <p class="text-slate-700 text-xs max-w-2xl leading-relaxed">
-            Subscription-driven consumer tech companies with outsized influence over the national economy and our president.
-          </p>
-        </div>
-
-        <!-- Row 1: Amazon, Apple, Google, Microsoft, Paramount+ -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-
-          <!-- Amazon -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">amazon</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('amazon-prime', 'https://www.amazon.com/amazonprime')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Amazon Prime</span>
-                <span x-data="linkCounter('amazon-prime')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('audible', 'https://help.audible.com/s/article/cancel-membership?language=en_US')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Audible</span>
-                <span x-data="linkCounter('audible')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('amazon-music', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GCRZL3F2UZMNP3T3')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Amazon Music</span>
-                <span x-data="linkCounter('amazon-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('prime-video', 'https://www.primevideo.com/help?nodeId=GWGDSNXVPJ93UW5V')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Prime Video</span>
-                <span x-data="linkCounter('prime-video')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('amazon-grocery', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=T0o47frAQPUyjKryun')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Amazon Grocery</span>
-                <span x-data="linkCounter('amazon-grocery')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('kindle-unlimited', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLSQ4722655M4ZEJ')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Kindle Unlimited</span>
-                <span x-data="linkCounter('kindle-unlimited')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Apple -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Apple</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('apple-music', 'https://support.apple.com/en-us/118399')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Apple Music</span>
-                <span x-data="linkCounter('apple-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('apple-news', 'https://support.apple.com/en-us/118428?device-type=mac')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Apple News+</span>
-                <span x-data="linkCounter('apple-news')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('apple-tv', 'https://support.apple.com/en-us/118398')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Apple TV+</span>
-                <span x-data="linkCounter('apple-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('apple-one', 'https://support.apple.com/en-us/118428?device-type=mac')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Apple One</span>
-                <span x-data="linkCounter('apple-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('apple-fitness', 'https://support.apple.com/en-us/118428?device-type=mac')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Apple Fitness+</span>
-                <span x-data="linkCounter('apple-fitness')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('apple-arcade', 'https://support.apple.com/en-us/118428?device-type=mac')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Apple Arcade</span>
-                <span x-data="linkCounter('apple-arcade')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li>
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <span class="text-slate-700">Avoid purchasing Apple hardware</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Google -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Google</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('youtube-premium', 'https://support.google.com/youtube/answer/6308278')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from YouTube Premium</span>
-                <span x-data="linkCounter('youtube-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('youtube-music', 'https://support.google.com/youtube/answer/6308278')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from YouTube Music</span>
-                <span x-data="linkCounter('youtube-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('youtube-tv', 'https://www.youtube.com/paid_memberships')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from YouTube TV</span>
-                <span x-data="linkCounter('youtube-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('google-one', 'https://support.google.com/googleone/answer/9056360?hl=en&co=GENIE.Platform%3DAndroid')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Google One</span>
-                <span x-data="linkCounter('google-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Microsoft -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Microsoft</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('microsoft-office', 'https://support.microsoft.com/en-us/account-billing/cancel-your-microsoft-subscription-c2c6b0e3-cab3-cb98-d83e-c9ad54620530')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Microsoft Office</span>
-                <span x-data="linkCounter('microsoft-office')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('xbox-gamepass', 'https://support.xbox.com/en-US/help/subscriptions-billing/manage-subscriptions/cancel-recurring-billing-or-subscription')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Xbox Game Pass</span>
-                <span x-data="linkCounter('xbox-gamepass')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('linkedin-premium', 'https://www.linkedin.com/help/linkedin/answer/a545578')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from LinkedIn Premium</span>
-                <span x-data="linkCounter('linkedin-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Paramount+ -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Paramount+</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('paramount-plus', 'https://support.paramountplus.com/s/article/PI-How-do-I-cancel-my-subscription?language=da')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Paramount+</span>
-                <span x-data="linkCounter('paramount-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-        </div><!-- /row 1 -->
-
-        <!-- Row 2: Meta, Uber, Netflix, OpenAI, X -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-
-          <!-- Meta -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Meta*</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('whatsapp', 'https://faq.whatsapp.com/2138577903196467/?cms_platform=android')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Delete</a>
-                <span class="text-slate-700"> WhatsApp</span>
-                <span x-data="linkCounter('whatsapp')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('facebook', 'https://www.facebook.com/help/154908788002686')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Delete</a>
-                <span class="text-slate-700"> Facebook</span>
-                <span x-data="linkCounter('facebook')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Uber -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Uber</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('uber-one', 'https://help.uber.com/en/ubereats/restaurants/article/how-do-i-cancel-my-uber-one-membership?nodeId=b386f2df-2321-484f-99ee-95fda95b57a3')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Uber One</span>
-                <span x-data="linkCounter('uber-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Netflix -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">Netflix</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('netflix', 'https://help.netflix.com/en/node/407')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from Netflix</span>
-                <span x-data="linkCounter('netflix')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- OpenAI -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">OpenAI</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('chatgpt-plus', 'https://help.openai.com/en/articles/7232927-how-do-i-cancel-my-chatgpt-subscription')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from ChatGPT Plus/Team</span>
-                <span x-data="linkCounter('chatgpt-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- X -->
-          <div class="company-card-yellow flex flex-col gap-2">
-            <p class="text-base font-black text-slate-950 tracking-tight mb-1">𝕏</p>
-            <ul class="flex flex-col gap-1.5">
-              <li x-data="linkAction('x-premium', 'https://help.x.com/en/using-x/x-premium#tbcancel')">
-                <span class="text-slate-700 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
-                <span class="text-slate-700"> from X Premium</span>
-                <span x-data="linkCounter('x-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-        </div><!-- /row 2 -->
-
-        <!-- Instagram footnote -->
-        <p class="text-slate-600 text-xs max-w-3xl leading-relaxed border-l-2 border-slate-400 pl-4">
-          * Hey, we'd boycott Instagram too if we could, but we need it to get this message to you.
-          Share widely, encourage friends to repost. But while you're on the platform, do not click any ads
-          and do not shop any brands you see linked there.
-        </p>
-      </div>
-
-      <hr class="section-divider-dark" />
-
-      <!-- ── JOIN THE RESISTANCE — still on yellow ── -->
-      <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Join the Resistance</h2>
-          <p class="text-slate-700 text-xs">Spread the word and amplify the movement.</p>
-        </div>
-        <ul class="flex flex-col gap-3 max-w-2xl">
-          <li class="flex gap-3 items-start">
-            <span class="text-slate-800 font-black text-xs mt-1 shrink-0">▪</span>
-            <span class="text-slate-800 leading-relaxed">Check out Scott Galloway's Instagram story and use the <span class="text-slate-950 font-bold">"Add Yours"</span> sticker to share your own cancellations</span>
-          </li>
-          <li class="flex gap-3 items-start">
-            <span class="text-slate-800 font-black text-xs mt-1 shrink-0">▪</span>
-            <span class="text-slate-800 leading-relaxed">Add hashtags <span class="text-slate-950 font-bold">#resistandunsubscribe</span> and <span class="text-slate-950 font-bold">#ResistICE</span></span>
-          </li>
-          <li class="flex gap-3 items-start">
-            <span class="text-slate-800 font-black text-xs mt-1 shrink-0">▪</span>
-            <span class="text-slate-800 leading-relaxed">Tag <span class="text-slate-950 font-bold">@profgalloway</span> on Instagram</span>
-          </li>
-          <li class="flex gap-3 items-start">
-            <span class="text-slate-800 font-black text-xs mt-1 shrink-0">▪</span>
-            <span class="text-slate-800 leading-relaxed">Challenge your friends and spread the word — every cancellation counts</span>
-          </li>
-          <li class="flex gap-3 items-start">
-            <span class="text-slate-800 font-black text-xs mt-1 shrink-0">▪</span>
-            <a href="https://www.instagram.com/stories/profgalloway/" target="_blank" rel="noopener noreferrer"
-               class="text-slate-950 font-bold underline hover:text-slate-700 leading-relaxed">
-              View Scott's Instagram story →
-            </a>
-          </li>
-        </ul>
-      </div>
-
-    </section>
-
-    <!-- ═══ BLAST ZONE + SHARE CTA — dark background ══════════════════════ -->
-    <section class="px-8 py-14 flex flex-col gap-14 bg-slate-950">
-
-      <!-- ── BLAST ZONE ── -->
-      <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-2xl font-black uppercase tracking-tight text-white">Blast Zone</h2>
-          <p class="text-slate-500 text-xs max-w-2xl leading-relaxed">
-            Consumer-facing companies identified as active enablers of ICE.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-          <!-- AT&T -->
-          <div class="blast-card flex flex-col gap-2">
-            <div class="flex items-start justify-between gap-2">
-              <p class="text-base font-black text-white tracking-tight">AT&amp;T</p>
-              <span class="text-xs font-black text-yellow-400 whitespace-nowrap">$90M contract</span>
-            </div>
-            <p class="text-slate-500 text-xs leading-relaxed">Awarded to provide ICE with IT and network projects</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('att-wireless', 'https://www.att.com/buy/broadband/cancel-service.html')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
-                <span class="text-slate-500"> wireless services</span>
-                <span x-data="linkCounter('att-wireless')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li><span class="text-yellow-400 mr-1 text-xs">▪</span><span class="text-slate-500">Switch to alternative carriers</span></li>
-              <li><span class="text-yellow-400 mr-1 text-xs">▪</span><span class="text-slate-500">Avoid upgrading devices through AT&amp;T</span></li>
-            </ul>
-          </div>
-
-          <!-- Comcast -->
-          <div class="blast-card flex flex-col gap-2">
-            <p class="text-base font-black text-white tracking-tight mb-1">Comcast</p>
-            <p class="text-slate-500 text-xs leading-relaxed">Holds an ICE award to provide broadcast cable at five "regional war rooms"</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('comcast', 'https://www.xfinity.com/support/articles/how-to-cancel-xfinity-service')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
-                <span class="text-slate-500"> cable / internet subscription</span>
-                <span x-data="linkCounter('comcast')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li><span class="text-yellow-400 mr-1 text-xs">▪</span><span class="text-slate-500">Avoid Xfinity services</span></li>
-            </ul>
-          </div>
-
-          <!-- Charter -->
-          <div class="blast-card flex flex-col gap-2">
-            <p class="text-base font-black text-white tracking-tight mb-1">Charter Communications</p>
-            <p class="text-slate-500 text-xs leading-relaxed">Provides cable and internet for ICE's Homeland Security Investigations Field Office in Beaumont, TX</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('charter', 'https://www.spectrum.net/support/manage-account/how-cancel-spectrum-services')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
-                <span class="text-slate-500"> Spectrum internet / cable</span>
-                <span x-data="linkCounter('charter')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Dell -->
-          <div class="blast-card flex flex-col gap-2">
-            <div class="flex items-start justify-between gap-2">
-              <p class="text-base font-black text-white tracking-tight">Dell</p>
-              <span class="text-xs font-black text-yellow-400 whitespace-nowrap">$18M contract</span>
-            </div>
-            <p class="text-slate-500 text-xs leading-relaxed">Awarded ICE contract for hardware and services</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('dell', 'https://www.dell.com')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Boycott</a>
-                <span class="text-slate-500"> Dell products</span>
-                <span x-data="linkCounter('dell')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- FedEx -->
-          <div class="blast-card flex flex-col gap-2">
-            <div class="flex items-start justify-between gap-2">
-              <p class="text-base font-black text-white tracking-tight">FedEx</p>
-              <span class="text-xs font-black text-yellow-400 whitespace-nowrap">$2.3M contract</span>
-            </div>
-            <p class="text-slate-500 text-xs leading-relaxed">Awarded ICE delivery contract</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('fedex', 'https://www.fedex.com')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Boycott</a>
-                <span class="text-slate-500"> FedEx — use USPS or UPS alternatives</span>
-                <span x-data="linkCounter('fedex')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Home Depot -->
-          <div class="blast-card flex flex-col gap-2">
-            <p class="text-base font-black text-white tracking-tight mb-1">Home Depot</p>
-            <p class="text-slate-500 text-xs leading-relaxed">ICE enabler and donor to campaigns supporting deportation policies</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('home-depot', 'https://www.homedepot.com')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Boycott</a>
-                <span class="text-slate-500"> Home Depot</span>
-                <span x-data="linkCounter('home-depot')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Lowe's -->
-          <div class="blast-card flex flex-col gap-2">
-            <p class="text-base font-black text-white tracking-tight mb-1">Lowe's</p>
-            <p class="text-slate-500 text-xs leading-relaxed">Using AI-powered license plate readers in parking lots, feeding data into law enforcement surveillance systems accessible to ICE</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('lowes', 'https://www.lowes.com')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Stop shopping</a>
-                <span class="text-slate-500"> at Lowe's</span>
-                <span x-data="linkCounter('lowes')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Marriott -->
-          <div class="blast-card flex flex-col gap-2">
-            <p class="text-base font-black text-white tracking-tight mb-1">Marriott</p>
-            <p class="text-slate-500 text-xs leading-relaxed">ICE uses Marriott properties to detain immigrants</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('marriott', 'https://www.marriott.com')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Book</a>
-                <span class="text-slate-500"> with alternative hotel chains</span>
-                <span x-data="linkCounter('marriott')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-              <li x-data="linkAction('marriott-bonvoy', 'https://loyalty.marriott.com/en-US/account/profile')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Cancel</a>
-                <span class="text-slate-500"> Bonvoy membership</span>
-                <span x-data="linkCounter('marriott-bonvoy')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- UPS -->
-          <div class="blast-card flex flex-col gap-2">
-            <p class="text-base font-black text-white tracking-tight mb-1">UPS</p>
-            <p class="text-slate-500 text-xs leading-relaxed">Small package delivery contract with ICE</p>
-            <ul class="flex flex-col gap-1.5 mt-1">
-              <li x-data="linkAction('ups', 'https://www.ups.com')">
-                <span class="text-yellow-400 mr-1 text-xs">▪</span>
-                <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Use alternative</a>
-                <span class="text-slate-500"> shipping (USPS, local couriers)</span>
-                <span x-data="linkCounter('ups')" class="text-slate-700 text-xs ml-1">(<span x-text="count">0</span>)</span>
-              </li>
-            </ul>
-          </div>
 
         </div>
-      </div>
 
-      <hr class="section-divider" />
+      </section>
 
-      <!-- ── SHARE CTA ── -->
-      <div class="flex flex-col gap-4 max-w-xl p-6"
-           style="background: linear-gradient(135deg, rgba(250,204,21,0.08) 0%, rgba(250,204,21,0.03) 100%);
-                  border: 1px solid rgba(250,204,21,0.25);">
-        <p class="text-yellow-400 font-black uppercase text-sm tracking-wider">Share Your Cancellations</p>
-        <p class="text-slate-400 text-xs leading-relaxed">
-          Post on Instagram, tag
-          <span class="text-white font-bold">@profgalloway</span> with
-          <span class="text-white font-bold">#ResistAndUnsubscribe</span>.
-          Every share amplifies the movement.
-        </p>
-        <a href="https://www.instagram.com/stories/profgalloway/" target="_blank" rel="noopener noreferrer"
-           class="inline-block px-6 py-2.5 bg-yellow-400 text-slate-950 font-black uppercase text-xs tracking-wider hover:bg-yellow-300 transition w-fit">
-          Share on Instagram →
-        </a>
-      </div>
+    </div><!-- /tab-root -->
 
-    </section>
   </main>
 
   <!-- ═══ FOOTER ═══════════════════════════════════════════════════════════ -->
@@ -699,6 +756,20 @@
       "att-wireless","comcast","charter","dell","fedex","home-depot",
       "lowes","marriott","marriott-bonvoy","ups",
     ];
+
+    // ─── Tab state ────────────────────────────────────────────────────────────
+    function setTab(name) {
+      ['why', 'unsubscribe', 'leaderboards'].forEach(id => {
+        const el = document.getElementById('tab-' + id);
+        if (el) el.style.display = (id === name) ? '' : 'none';
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === name);
+      });
+    }
+
+    // Initialize tabs on load
+    document.addEventListener('DOMContentLoaded', () => setTab('why'));
 
     // ─── Shared user votes cache ──────────────────────────────────────────────
     let _votedButtons = null;
@@ -785,6 +856,28 @@
             this.clicked = true;
             if (_votedButtons) _votedButtons.push(this.buttonId);
           } catch { /* silently fail — link already opened */ }
+        },
+      };
+    }
+
+    // ─── Leaderboard ──────────────────────────────────────────────────────────
+    function leaderboard() {
+      return {
+        rows:    [],
+        loading: true,
+        error:   false,
+
+        async init() {
+          try {
+            const res  = await fetch(`${CONFIG.apiEndpoint}/leaderboard`);
+            if (!res.ok) throw new Error('non-200');
+            const data = await res.json();
+            this.rows  = data.leaderboard ?? [];
+          } catch {
+            this.error = true;
+          } finally {
+            this.loading = false;
+          }
         },
       };
     }

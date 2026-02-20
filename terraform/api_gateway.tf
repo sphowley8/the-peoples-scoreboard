@@ -300,6 +300,76 @@ resource "aws_api_gateway_integration_response" "user_votes_options" {
   }
 }
 
+# --- /leaderboard resource (public) ---
+
+resource "aws_api_gateway_resource" "leaderboard" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+  path_part   = "leaderboard"
+}
+
+# GET /leaderboard — no auth required
+resource "aws_api_gateway_method" "leaderboard_get" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.leaderboard.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "leaderboard_get" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.leaderboard.id
+  http_method             = aws_api_gateway_method.leaderboard_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_leaderboard.invoke_arn
+}
+
+# OPTIONS /leaderboard — preflight CORS
+resource "aws_api_gateway_method" "leaderboard_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.leaderboard.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "leaderboard_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.leaderboard.id
+  http_method = aws_api_gateway_method.leaderboard_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "leaderboard_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.leaderboard.id
+  http_method = aws_api_gateway_method.leaderboard_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "leaderboard_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.leaderboard.id
+  http_method = aws_api_gateway_method.leaderboard_options.http_method
+  status_code = aws_api_gateway_method_response.leaderboard_options_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # --- Deployment & stage ---
 
 resource "aws_api_gateway_deployment" "main" {
@@ -320,6 +390,9 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.user_votes.id,
       aws_api_gateway_method.user_votes_get.id,
       aws_api_gateway_integration.user_votes_get.id,
+      aws_api_gateway_resource.leaderboard.id,
+      aws_api_gateway_method.leaderboard_get.id,
+      aws_api_gateway_integration.leaderboard_get.id,
     ]))
   }
 
