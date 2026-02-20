@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — The People's Scoreboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/auth.js"></script>
+  <style>
+    body { font-family: 'Courier New', Courier, monospace; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-950 text-gray-200 min-h-screen flex flex-col">
+
+  <nav class="w-full px-6 py-3 flex items-center border-b border-slate-800 bg-slate-950 sticky top-0 z-50">
+    <a href="index.html"
+       class="text-sm font-black tracking-tight text-white uppercase hover:text-[#ffed61] transition">
+      🗳️ The People's Scoreboard
+    </a>
+  </nav>
+
+  <main class="flex-1 flex items-center justify-center px-6 py-16">
+    <div x-data="signupPage()" x-init="init()" x-cloak class="w-full max-w-sm flex flex-col gap-6">
+
+      <!-- Step 1: Email -->
+      <div x-show="step === 'email'" x-transition>
+        <div class="flex flex-col gap-1 mb-6">
+          <h1 class="text-2xl font-black uppercase tracking-tight text-white">Create Account</h1>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Enter your email — we'll send an 8-digit verification code to confirm it's you.
+          </p>
+        </div>
+        <form @submit.prevent="sendCode()" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="email-input" class="text-xs font-bold uppercase tracking-widest text-slate-400">Email address</label>
+            <input id="email-input" type="email" x-model="email" autocomplete="email" required
+                   placeholder="you@example.com"
+                   class="w-full px-4 py-3 bg-slate-900 border border-slate-700 text-white text-sm
+                          placeholder-slate-600 focus:outline-none focus:border-[#5c67ff] transition" />
+          </div>
+          <p x-show="errorMsg" x-text="errorMsg" class="text-red-400 text-xs -mt-1"></p>
+          <button type="submit" :disabled="loading"
+                  class="w-full py-3 bg-[#ffed61] text-slate-950 text-xs font-black uppercase
+                         tracking-wider hover:bg-[#fff9a0] transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!loading">Send Verification Code →</span>
+            <span x-show="loading">Sending…</span>
+          </button>
+        </form>
+        <p class="mt-6 text-center text-xs text-slate-500">
+          Already have an account?
+          <a href="login.html" class="text-[#ffed61] hover:underline font-bold">Log in here →</a>
+        </p>
+      </div>
+
+      <!-- Step 2: 8-digit verification code -->
+      <div x-show="step === 'verify'" x-transition>
+        <div class="flex flex-col gap-1 mb-6">
+          <h1 class="text-2xl font-black uppercase tracking-tight text-white">Verify Your Email</h1>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            We sent an 8-digit code to
+            <span class="text-white font-bold" x-text="email"></span>.
+            Enter it below to confirm your account.
+          </p>
+        </div>
+        <form @submit.prevent="verifyCode()" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="code-input" class="text-xs font-bold uppercase tracking-widest text-slate-400">8-Digit Code</label>
+            <input id="code-input" type="text" inputmode="numeric" x-model="code"
+                   autocomplete="one-time-code" required placeholder="12345678"
+                   class="w-full px-4 py-3 bg-slate-900 border border-slate-700 text-white
+                          placeholder-slate-600 tracking-[0.4em] text-center font-black text-xl
+                          focus:outline-none focus:border-[#5c67ff] transition" />
+          </div>
+          <p x-show="errorMsg" x-text="errorMsg" class="text-red-400 text-xs -mt-1"></p>
+          <button type="submit" :disabled="loading"
+                  class="w-full py-3 bg-[#ffed61] text-slate-950 text-xs font-black uppercase
+                         tracking-wider hover:bg-[#fff9a0] transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!loading">Confirm Account →</span>
+            <span x-show="loading">Confirming…</span>
+          </button>
+        </form>
+        <div class="flex items-center justify-between mt-4 text-xs text-slate-500">
+          <button @click="step = 'email'; errorMsg = ''"
+                  class="hover:text-slate-300 transition underline underline-offset-2">
+            ← Different email
+          </button>
+          <button @click="sendCode()" :disabled="loading"
+                  class="hover:text-slate-300 transition underline underline-offset-2 disabled:opacity-50">
+            Resend code
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Account confirmed — now log in -->
+      <div x-show="step === 'confirmed'" x-transition>
+        <div class="flex flex-col gap-4 text-center">
+          <h1 class="text-2xl font-black uppercase tracking-tight text-[#ffed61]">Account Created!</h1>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Your account has been confirmed. We're sending you a 6-digit sign-in code now.
+          </p>
+          <a href="login.html" x-bind:href="`login.html?email=${encodeURIComponent(email)}`"
+             class="w-full py-3 bg-[#ffed61] text-slate-950 text-xs font-black uppercase
+                    tracking-wider hover:bg-[#fff9a0] transition text-center">
+            Go to Log In →
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function signupPage() {
+      return {
+        step: 'email',
+        email: '',
+        code: '',
+        loading: false,
+        errorMsg: '',
+
+        init() {
+          if (isLoggedIn()) { window.location.href = 'index.html'; return; }
+        },
+
+        async sendCode() {
+          this.errorMsg = '';
+          this.loading  = true;
+          try {
+            await signUpNewUser(this.email);
+            this.code = '';
+            this.step = 'verify';
+          } catch (err) {
+            console.error('[signup] sendCode:', err.code, err.message);
+            if (err.code === 'UsernameExistsException') {
+              // Account already exists — send them to login instead.
+              this.errorMsg = 'An account with that email already exists. Try logging in instead.';
+            } else if (err.code === 'LimitExceededException' || err.code === 'TooManyRequestsException') {
+              this.errorMsg = 'Too many attempts. Please wait a few minutes and try again.';
+            } else {
+              this.errorMsg = `Error (${err.code || 'unknown'}). Please try again.`;
+            }
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async verifyCode() {
+          this.errorMsg = '';
+          this.loading  = true;
+          try {
+            await confirmSignUpOnly(this.email, this.code);
+            this.step = 'confirmed';
+          } catch (err) {
+            console.error('[signup] verifyCode:', err.code, err.message);
+            if (err.code === 'CodeMismatchException') {
+              this.errorMsg = 'Incorrect code. Double-check and try again.';
+            } else if (err.code === 'ExpiredCodeException') {
+              this.errorMsg = 'Code expired. Click "Resend code" to get a fresh one.';
+            } else {
+              this.errorMsg = `Error (${err.code || 'unknown'}). Please try again.`;
+            }
+          } finally {
+            this.loading = false;
+          }
+        },
+      };
+    }
+  </script>
+
+</body>
+</html>

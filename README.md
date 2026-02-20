@@ -1,77 +1,138 @@
-# the-peoples-scoreboard
-This is a web app that will provide users the ability to participate in an organized economic strike that can be measured and visualized effectively.
+# The People's Scoreboard
 
-I am intending for this project to be practice using Claude. It isn't often that you have an idea that excites you and also offers you the ability to learn new skills and use new tools. That is what this is for me.
+A web app for organized economic activism — users log unsubscriptions and boycotts from companies enabling ICE/Trump policies. Collective action counts are shown publicly; per-user history is available when logged in.
 
-And if I could make an impact on the world too? Cherry on top.
-
-# Phases
-## MVP
-1. Create architecture
-2. Deploy cloud infrastructure
-3. Deploy website such that the following features are satisfied:
-   - Users can log in
-   - Users can click button to "unsubscribe" and it is tracked in a database and updated at top of screen
-   - Users can share the button
-4. Create basic utilities such as the following:
-   - Spin down AWS infrastructure
+> Built as a learning project using Claude Code, with a genuine hope of making an impact.
 
 ---
 
-# Next Steps
+## Stack
 
-## 1. Configure your Terraform variables
+| Layer | Tech |
+|-------|------|
+| Frontend | HTML + Tailwind CSS (CDN) + Alpine.js (CDN) — no build step |
+| Backend | AWS Lambda (Python 3.12) + API Gateway |
+| Database | DynamoDB (on-demand) |
+| Auth | Cognito (passwordless EMAIL_OTP) |
+| Hosting | S3 + CloudFront |
+| Infra | Terraform |
+
+---
+
+## Features
+
+- **Public scoreboard** — global action counter (10-digit, comma-formatted) + per-company counts
+- **Leaderboard** — ranked list of users by total actions taken (emails masked)
+- **Passwordless sign-in** — email OTP, no password ever set or stored
+- **One vote per action** — DynamoDB conditional writes prevent duplicate counting
+- **CloudFront caching** — public API endpoints cached at the edge (60s for counts, 5min for leaderboard)
+
+---
+
+## Auth Flow
+
+All authentication is handled in `login.html` via direct Cognito API calls — no Hosted UI.
+
+**New user:**
+1. Enter email → Cognito `SignUp` → 6-digit verification code sent
+2. Enter code → account confirmed → 8-digit OTP sent automatically
+3. Enter OTP → signed in
+
+**Returning user:**
+1. Enter email → Cognito `InitiateAuth` → 8-digit OTP sent
+2. Enter OTP → signed in
+
+Tokens are stored in `sessionStorage` and sent as the `Authorization` header on protected API calls.
+
+---
+
+## Quick Start (Local Dev)
+
+There's no build step — open the HTML files directly or serve with any static server:
+
 ```bash
-cd the-peoples-scoreboard-terraform/terraform
+cd frontend
+python3 -m http.server 3000
+# visit http://localhost:3000
+```
+
+Note: Auth and API calls will still hit the deployed AWS backend.
+
+---
+
+## Deploy
+
+### Prerequisites
+- AWS CLI configured
+- Terraform >= 1.0
+
+### First-time setup
+```bash
+cd terraform
 cp terraform.tfvars.example terraform.tfvars
-```
-Open `terraform.tfvars` and set:
-- `aws_region` — your preferred AWS region
-- `environment` — `dev` to start
-- `domain_name` — leave blank for now; fill in once you have a domain
-
-## 2. Deploy infrastructure (in this order)
-
-| Step | File | What to verify / update before applying |
-|------|------|------------------------------------------|
-| 1 | `variables.tf` | Confirm defaults match your preferences |
-| 2 | `dynamodb.tf` | No changes needed for MVP |
-| 3 | `lambda.tf` + `lambda_src/log_click.py` | No changes needed for MVP |
-| 4 | `cognito.tf` | Update `cognito_callback_urls` / `cognito_logout_urls` in `terraform.tfvars` once you know your CloudFront URL |
-| 5 | `api_gateway.tf` | No changes needed for MVP |
-| 6 | `s3_cloudfront.tf` | Add `domain_name` in `terraform.tfvars` if using a custom domain; leave blank to use the auto-generated CloudFront URL |
-
-Then run:
-```bash
+# edit terraform.tfvars — set aws_region and environment
 terraform init
-terraform plan -out=tfplan
-terraform apply tfplan
+terraform apply
 ```
 
-After apply, `terraform output` will print your CloudFront URL, API endpoint, and Cognito IDs — you'll need these for the frontend.
-
-## 3. Update Cognito callback URLs
-Once you have your CloudFront URL from `terraform output cloudfront_domain`, add it to `terraform.tfvars`:
-```hcl
-cognito_callback_urls = [
-  "http://localhost:3000/callback",
-  "https://<your-cloudfront-domain>/callback",
-]
-cognito_logout_urls = [
-  "http://localhost:3000",
-  "https://<your-cloudfront-domain>",
-]
-```
-Then re-run `terraform apply`.
-
-## 4. Build and deploy the frontend
-- Build a static site (plain HTML/JS or a framework like React/Vue)
-- Wire up the Cognito Hosted UI for login using the `cognito_client_id` and `cognito_hosted_ui_url` outputs
-- On button click, call `POST /log-click` with the user's JWT in the `Authorization` header
-- Deploy to S3: `aws s3 sync ./dist s3://<your-bucket-name> --delete`
-- Invalidate the CloudFront cache: `aws cloudfront create-invalidation --distribution-id <id> --paths "/*"`
-
-## 5. Tear down when done
+### Deploy frontend
 ```bash
-./scripts/teardown.sh
+./deploy-frontend.sh   # syncs frontend/ to S3 + invalidates CloudFront
+```
+
+### Outputs after `terraform apply`
+| Output | Description |
+|--------|-------------|
+| `cloudfront_domain` | Public URL of the app |
+| `api_endpoint` | Direct API Gateway URL (bypasses CloudFront cache) |
+| `cognito_user_pool_id` | Cognito pool ID |
+| `cognito_client_id` | App client ID used in `js/auth.js` |
+| `s3_frontend_bucket` | S3 bucket name |
+
+---
+
+## Project Structure
+
+```
+frontend/
+  index.html          # Main page — tabs, global counter, action buttons
+  profile.html        # Per-user activity history
+  login.html          # Sign in + sign up (single page, OTP flow)
+  js/auth.js          # Auth helpers: OTP functions, token storage, API helper
+
+terraform/
+  lambda_src/
+    log_click.py          # POST /log-click
+    get_click_count.py    # GET /click-count
+    get_user_activity.py  # GET /user-activity
+    get_user_votes.py     # GET /user-votes
+    get_leaderboard.py    # GET /leaderboard
+  cognito.tf            # Passwordless user pool + app client
+  dynamodb.tf           # click-log + click-dedup tables
+  lambda.tf             # Lambda functions + IAM
+  api_gateway.tf        # Routes + CORS + Cognito authorizer
+  s3_cloudfront.tf      # Static hosting + API caching
+  variables.tf / outputs.tf / main.tf
+```
+
+---
+
+## API
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/log-click` | Cognito JWT | Record an action |
+| GET | `/click-count?button_id=` | None | Count for one button |
+| GET | `/user-activity?limit=` | Cognito JWT | Caller's action history |
+| GET | `/user-votes` | Cognito JWT | Buttons caller has voted on |
+| GET | `/leaderboard` | None | All users ranked by action count |
+
+All requests go through CloudFront (`https://dmmywcvdfo0fv.cloudfront.net`). Public endpoints are cached at the edge; authenticated endpoints bypass the cache.
+
+---
+
+## Tear Down
+
+```bash
+cd terraform && terraform destroy
 ```

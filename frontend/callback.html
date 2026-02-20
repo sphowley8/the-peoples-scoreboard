@@ -2,44 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Signing you in… — The People's Scoreboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="js/auth.js"></script>
+  <meta http-equiv="refresh" content="0; url=login.html" />
+  <title>Redirecting…</title>
 </head>
-<body class="bg-gray-950 text-white min-h-screen flex items-center justify-center">
-
-  <div class="flex flex-col items-center gap-4 text-center px-6">
-    <div id="spinner" class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-    <p id="message" class="text-gray-400 text-lg">Signing you in…</p>
-  </div>
-
-  <script>
-    (async () => {
-      const params  = new URLSearchParams(window.location.search);
-      const code    = params.get("code");
-      const msgEl   = document.getElementById("message");
-      const spinner = document.getElementById("spinner");
-
-      if (!code) {
-        spinner.classList.add("hidden");
-        msgEl.textContent = "No auth code found. Redirecting…";
-        setTimeout(() => window.location.href = "/", 2000);
-        return;
-      }
-
-      try {
-        const tokens = await exchangeCodeForTokens(code);
-        saveTokens(tokens);
-        window.location.href = "/";
-      } catch (err) {
-        spinner.classList.add("hidden");
-        msgEl.textContent = "Sign-in failed. Please try again.";
-        msgEl.classList.add("text-red-400");
-        setTimeout(() => window.location.href = "/", 3000);
-      }
-    })();
-  </script>
-
-</body>
+<body></body>
 </html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — The People's Scoreboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/auth.js"></script>
+  <style>
+    body { font-family: 'Courier New', Courier, monospace; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-950 text-gray-200 min-h-screen flex flex-col">
+
+  <nav class="w-full px-6 py-3 flex items-center border-b border-slate-800 bg-slate-950 sticky top-0 z-50">
+    <a href="index.html"
+       class="text-sm font-black tracking-tight text-white uppercase hover:text-[#ffed61] transition">
+      🗳️ The People's Scoreboard
+    </a>
+  </nav>
+
+  <main class="flex-1 flex items-center justify-center px-6 py-16">
+    <div x-data="loginPage()" x-init="init()" x-cloak class="w-full max-w-sm flex flex-col gap-6">
+
+      <!-- Step 1: Email -->
+      <div x-show="step === 'email'" x-transition>
+        <div class="flex flex-col gap-1 mb-6">
+          <h1 class="text-2xl font-black uppercase tracking-tight text-white">Sign In / Sign Up</h1>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Enter your email — we'll send you a one-time code. No password needed.
+            New here? We'll create your account automatically.
+          </p>
+        </div>
+        <form @submit.prevent="sendCode()" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="email-input" class="text-xs font-bold uppercase tracking-widest text-slate-400">Email address</label>
+            <input id="email-input" type="email" x-model="email" autocomplete="email" required
+                   placeholder="you@example.com"
+                   class="w-full px-4 py-3 bg-slate-900 border border-slate-700 text-white text-sm
+                          placeholder-slate-600 focus:outline-none focus:border-[#5c67ff] transition" />
+          </div>
+          <p x-show="successMsg" x-text="successMsg" class="text-green-400 text-xs -mt-1"></p>
+          <p x-show="errorMsg"   x-text="errorMsg"   class="text-red-400   text-xs -mt-1"></p>
+          <button type="submit" :disabled="loading"
+                  class="w-full py-3 bg-[#ffed61] text-slate-950 text-xs font-black uppercase
+                         tracking-wider hover:bg-[#fff9a0] transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!loading">Send Code →</span>
+            <span x-show="loading">Sending…</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 2: Code entry (6-digit for new users, 8-digit for existing users) -->
+      <div x-show="step === 'code'" x-transition>
+        <div class="flex flex-col gap-1 mb-6">
+          <h1 class="text-2xl font-black uppercase tracking-tight text-white">Check Your Email</h1>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            We sent a <span x-text="isNewUser ? '6' : '8'"></span>-digit code to
+            <span class="text-white font-bold" x-text="email"></span>.
+            <span x-show="isNewUser" class="block mt-1 text-[#ffed61]">First time here — we're creating your account.</span>
+          </p>
+        </div>
+        <form @submit.prevent="verifyCode()" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="code-input"
+                   class="text-xs font-bold uppercase tracking-widest text-slate-400"
+                   x-text="isNewUser ? '6-Digit Code' : '8-Digit Code'"></label>
+            <input id="code-input" type="text" inputmode="numeric"
+                   x-model="code"
+                   autocomplete="one-time-code" required
+                   :placeholder="isNewUser ? '123456' : '12345678'"
+                   class="w-full px-4 py-3 bg-slate-900 border border-slate-700 text-white
+                          placeholder-slate-600 tracking-[0.4em] text-center font-black text-xl
+                          focus:outline-none focus:border-[#5c67ff] transition" />
+          </div>
+          <p x-show="successMsg" x-text="successMsg" class="text-green-400 text-xs -mt-1"></p>
+          <p x-show="errorMsg"   x-text="errorMsg"   class="text-red-400   text-xs -mt-1"></p>
+          <button type="submit" :disabled="loading"
+                  class="w-full py-3 bg-[#ffed61] text-slate-950 text-xs font-black uppercase
+                         tracking-wider hover:bg-[#fff9a0] transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!loading" x-text="isNewUser ? 'Create Account →' : 'Sign In →'"></span>
+            <span x-show="loading" x-text="isNewUser ? 'Creating Account…' : 'Signing In…'"></span>
+          </button>
+        </form>
+        <div class="flex items-center justify-between mt-4 text-xs text-slate-500">
+          <button @click="step = 'email'; clearMsgs(); code = ''"
+                  class="hover:text-slate-300 transition underline underline-offset-2">
+            ← Different email
+          </button>
+          <button @click="sendCode()" :disabled="loading"
+                  class="hover:text-slate-300 transition underline underline-offset-2 disabled:opacity-50">
+            Resend code
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function loginPage() {
+      return {
+        step:      'email',  // 'email' | 'code'
+        email:     '',
+        code:      '',
+        session:   '',       // Cognito session (existing users only)
+        isNewUser: false,    // true = SignUp flow (8-digit), false = OTP flow (6-digit)
+        loading:    false,
+        errorMsg:   '',
+        successMsg: '',
+
+        init() {
+          if (isLoggedIn()) { window.location.href = 'index.html'; return; }
+          const p = new URLSearchParams(window.location.search);
+          if (p.get('email')) this.email = p.get('email');
+        },
+
+        clearMsgs() {
+          this.errorMsg   = '';
+          this.successMsg = '';
+        },
+
+        async sendCode() {
+          this.clearMsgs();
+          this.loading   = true;
+          this.isNewUser = false;
+          try {
+            // Try existing-user OTP login first (6-digit code).
+            const result   = await initiateOtpAuth(this.email);
+            this.session   = result.session;
+            this.isNewUser = false;
+            this.code      = '';
+            this.step      = 'code';
+          } catch (err) {
+            console.error('[login] sendCode:', err.code, err.message);
+            if (err.code === 'UserNotFoundException' || err.code === 'NotAuthorizedException') {
+              // New user — SignUp sends an 8-digit verification code.
+              try {
+                await signUpNewUser(this.email);
+                this.isNewUser = true;
+                this.session   = '';
+                this.code      = '';
+                this.step      = 'code';
+              } catch (innerErr) {
+                console.error('[login] signUpNewUser:', innerErr.code, innerErr.message);
+                if (innerErr.code === 'UsernameExistsException') {
+                  // Race condition — account exists, retry as existing user.
+                  try {
+                    const result   = await initiateOtpAuth(this.email);
+                    this.session   = result.session;
+                    this.isNewUser = false;
+                    this.code      = '';
+                    this.step      = 'code';
+                  } catch (retryErr) {
+                    this.errorMsg = `Error: could not send code (${retryErr.code || 'unknown'}). Please try again.`;
+                  }
+                } else {
+                  this.errorMsg = `Error: could not create account (${innerErr.code || 'unknown'}). Try again.`;
+                }
+              }
+            } else if (err.code === 'LimitExceededException' || err.code === 'TooManyRequestsException') {
+              this.errorMsg = 'Error: too many attempts. Please wait a few minutes and try again.';
+            } else {
+              this.errorMsg = `Error: could not send code (${err.code || 'unknown'}). Please try again.`;
+            }
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async verifyCode() {
+          this.clearMsgs();
+          this.loading  = true;
+          try {
+            if (this.isNewUser) {
+              // Confirm the 8-digit signup code.
+              await confirmSignUpOnly(this.email, this.code);
+              // Account confirmed — now sign in with a fresh 6-digit OTP.
+              const result    = await initiateOtpAuth(this.email);
+              this.session    = result.session;
+              this.isNewUser  = false;
+              this.code       = '';
+              this.successMsg = 'SUCCESS: Account created! Check your email for a 6-digit sign-in code.';
+            } else {
+              // Verify the 6-digit OTP and get tokens.
+              const auth = await respondToOtp(this.session, this.email, this.code);
+              saveTokens({ id_token: auth.IdToken, access_token: auth.AccessToken, refresh_token: auth.RefreshToken });
+              const p = new URLSearchParams(window.location.search);
+              window.location.href = p.get('next') || 'index.html';
+            }
+          } catch (err) {
+            console.error('[login] verifyCode:', err.code, err.message);
+            if (err.code === 'CodeMismatchException') {
+              this.errorMsg = 'Error: incorrect code. Double-check and try again.';
+            } else if (err.code === 'ExpiredCodeException') {
+              this.errorMsg = 'Error: code expired. Click "Resend code" to get a fresh one.';
+            } else if (err.code === 'NotAuthorizedException') {
+              this.errorMsg = 'Error: session expired. Please request a new code.';
+              this.step = 'email';
+            } else {
+              this.errorMsg = `Error: could not verify code (${err.code || 'unknown'}). Please try again.`;
+            }
+          } finally {
+            this.loading = false;
+          }
+        },
+      };
+    }
+  </script>
+
+</body>
+</html>

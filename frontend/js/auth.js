@@ -1,12 +1,16 @@
 // ─── Cognito Config ───────────────────────────────────────────────────────────
 const CONFIG = {
-  region:       "us-east-1",
-  userPoolId:   "us-east-1_YRVrviFVa",
-  clientId:     "69ldkhrql8sq7652oubmu092kg",
-  hostedUiBase: "https://peoples-scoreboard-dev.auth.us-east-1.amazoncognito.com",
-  appBase:      "https://dmmywcvdfo0fv.cloudfront.net",
-  apiEndpoint:  "https://zhl7evbf4i.execute-api.us-east-1.amazonaws.com/dev",
+  region:      "us-east-1",
+  userPoolId:  "us-east-1_YRVrviFVa",   // update after terraform apply
+  clientId:    "69ldkhrql8sq7652oubmu092kg", // update after terraform apply
+  appBase:     "https://dmmywcvdfo0fv.cloudfront.net",
+  // API calls go through CloudFront — cached endpoints are served from the
+  // edge; uncached ones pass through to API Gateway transparently.
+  apiEndpoint: "https://dmmywcvdfo0fv.cloudfront.net",
 };
+
+// ─── Cognito Identity Provider endpoint ──────────────────────────────────────
+const COGNITO_IDP = `https://cognito-idp.${CONFIG.region}.amazonaws.com/`;
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
@@ -55,61 +59,145 @@ function getCurrentUser() {
   return parseJwt(token);
 }
 
-// ─── Cognito Hosted UI URLs ───────────────────────────────────────────────────
-
-function getLoginUrl() {
-  const params = new URLSearchParams({
-    client_id:     CONFIG.clientId,
-    response_type: "code",
-    scope:         "openid email profile",
-    redirect_uri:  `${CONFIG.appBase}/callback.html`,
-  });
-  return `${CONFIG.hostedUiBase}/login?${params}`;
-}
-
-function getSignUpUrl() {
-  const params = new URLSearchParams({
-    client_id:     CONFIG.clientId,
-    response_type: "code",
-    scope:         "openid email profile",
-    redirect_uri:  `${CONFIG.appBase}/callback.html`,
-  });
-  return `${CONFIG.hostedUiBase}/signup?${params}`;
-}
-
-function getLogoutUrl() {
-  const params = new URLSearchParams({
-    client_id:  CONFIG.clientId,
-    logout_uri: CONFIG.appBase,
-  });
-  return `${CONFIG.hostedUiBase}/logout?${params}`;
-}
-
-// ─── Exchange Auth Code for Tokens ───────────────────────────────────────────
-
-async function exchangeCodeForTokens(code) {
-  const body = new URLSearchParams({
-    grant_type:   "authorization_code",
-    client_id:    CONFIG.clientId,
-    code,
-    redirect_uri: `${CONFIG.appBase}/callback.html`,
-  });
-
-  const res = await fetch(`${CONFIG.hostedUiBase}/oauth2/token`, {
-    method:  "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-
-  if (!res.ok) throw new Error("Token exchange failed");
-  return res.json();
-}
-
 // ─── Logout ───────────────────────────────────────────────────────────────────
 
 function logout() {
   clearTokens();
-  window.location.href = getLogoutUrl();
+  window.location.href = `${CONFIG.appBase}/`;
+}
+
+// ─── OTP Auth — Step 1: Send code ────────────────────────────────────────────
+// Returns: { session, destination }
+//   session     — Cognito Session token to pass to respondToOtp()
+//   destination — masked address Cognito confirms delivery to (e.g. u***@e***.com)
+// Throws an Error with err.code = Cognito __type on failure.
+
+async function initiateOtpAuth(email) {
+  const res = await fetch(COGNITO_IDP, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+    },
+    body: JSON.stringify({
+      AuthFlow:       "USER_AUTH",
+      ClientId:       CONFIG.clientId,
+      AuthParameters: {
+        USERNAME:            email,
+        PREFERRED_CHALLENGE: "EMAIL_OTP",
+      },
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const err = new Error(data.message || "InitiateAuth failed");
+    err.code = data.__type || "";
+    throw err;
+  }
+
+  // Cognito sends the OTP email and returns EMAIL_OTP directly.
+  // Use the session from this response — it matches the code in the email.
+  return {
+    session:     data.Session,
+    destination: data.ChallengeParameters?.CODE_DELIVERY_DESTINATION ?? "",
+  };
+}
+
+// ─── New user: SignUp only (sends 8-digit verification email) ────────────────
+// Returns { session: null, destination: email } — no Cognito session yet.
+// The 8-digit code is verified via confirmSignUp(), not RespondToAuthChallenge.
+
+async function signUpNewUser(email) {
+  const res = await fetch(COGNITO_IDP, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": "AWSCognitoIdentityProviderService.SignUp",
+    },
+    body: JSON.stringify({
+      ClientId:       CONFIG.clientId,
+      Username:       email,
+      // SignUp requires a Password field even for EMAIL_OTP pools.
+      // This value is never used to sign in.
+      Password:       crypto.randomUUID() + "Aa1!",
+      UserAttributes: [{ Name: "email", Value: email }],
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const err = new Error(data.message || "SignUp failed");
+    err.code = data.__type || "";
+    throw err;
+  }
+
+  return {
+    session:     null,   // no session — code is confirmed via ConfirmSignUp
+    destination: email,
+  };
+}
+
+// ─── New user: Confirm the 8-digit SignUp code only ──────────────────────────
+// Confirms the account. Does NOT initiate a sign-in session.
+// After this, the user visits login.html to sign in with a 6-digit OTP.
+
+async function confirmSignUpOnly(email, code) {
+  const res = await fetch(COGNITO_IDP, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": "AWSCognitoIdentityProviderService.ConfirmSignUp",
+    },
+    body: JSON.stringify({
+      ClientId:         CONFIG.clientId,
+      Username:         email,
+      ConfirmationCode: code.trim(),
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    const err  = new Error(data.message || "ConfirmSignUp failed");
+    err.code   = data.__type || "";
+    throw err;
+  }
+  // Returns nothing — caller handles redirect to login.html.
+}
+
+// ─── OTP Auth — Step 2: Verify code ──────────────────────────────────────────
+// Returns Cognito AuthenticationResult: { IdToken, AccessToken, RefreshToken }
+// Throws on wrong code, expired session, or network failure.
+
+async function respondToOtp(session, email, code) {
+  const res = await fetch(COGNITO_IDP, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": "AWSCognitoIdentityProviderService.RespondToAuthChallenge",
+    },
+    body: JSON.stringify({
+      ChallengeName:      "EMAIL_OTP",
+      ClientId:           CONFIG.clientId,
+      Session:            session,
+      ChallengeResponses: {
+        USERNAME:       email,
+        EMAIL_OTP_CODE: code.trim(),
+      },
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const err = new Error(data.message || "RespondToAuthChallenge failed");
+    err.code = data.__type || "";
+    throw err;
+  }
+
+  return data.AuthenticationResult;
 }
 
 // ─── API Helper ───────────────────────────────────────────────────────────────

@@ -22,14 +22,3 @@ variable "domain_name" {
   default     = ""
 }
 
-variable "cognito_callback_urls" {
-  description = "Allowed callback URLs for Cognito OAuth. Must include your CloudFront URL and any localhost used for development."
-  type        = list(string)
-  default     = ["http://localhost:3000/callback"]
-}
-
-variable "cognito_logout_urls" {
-  description = "Allowed logout URLs for Cognito OAuth."
-  type        = list(string)
-  default     = ["http://localhost:3000"]
-}

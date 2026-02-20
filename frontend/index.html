@@ -22,8 +22,8 @@
     /* Yellow outlined tag — dark variant for yellow backgrounds */
     .section-label {
       display: inline-block;
-      border: 2px solid #facc15;
-      color: #facc15;
+      border: 2px solid #ffed61;
+      color: #ffed61;
       font-weight: 900;
       font-size: 0.75rem;
       letter-spacing: 0.15em;
@@ -43,13 +43,13 @@
 
     /* Action links — standard (on dark bg) */
     .action-link {
-      color: #6366f1;
+      color: #5c67ff;
       text-decoration: underline;
       font-weight: 700;
       cursor: pointer;
       transition: color 0.15s;
     }
-    .action-link:hover { color: #4f46e5; }
+    .action-link:hover { color: #4a52e8; }
     .action-link.voted {
       color: #16a34a;
       text-decoration: line-through;
@@ -120,39 +120,42 @@
       transition: all 0.15s;
     }
     .tab-btn:hover {
-      border-color: #facc15;
-      color: #facc15;
+      border-color: #ffed61;
+      color: #ffed61;
     }
     .tab-btn.active {
-      background: #facc15;
-      border-color: #facc15;
-      color: #0f172a;
+      background: #ffed61;
+      border-color: #ffed61;
+      color: #5c67ff;
     }
 
-    /* Leaderboard table */
-    .lb-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .lb-table th {
-      text-align: left;
+    /* Sub-tab navigation (inside Why Unsubscribe) */
+    .subtab-btn {
+      padding: 0.4rem 1rem;
       font-size: 0.65rem;
+      font-weight: 900;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #64748b;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      padding: 0.5rem 0.75rem;
+      border: 2px solid rgba(0,0,0,0.25);
+      color: rgba(0,0,0,0.5);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.15s;
     }
-    .lb-table td {
-      padding: 0.6rem 0.75rem;
-      font-size: 0.8rem;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      color: #cbd5e1;
+    .subtab-btn:hover {
+      border-color: #5c67ff;
+      color: #5c67ff;
     }
-    .lb-table tr:first-child td { color: #facc15; font-weight: 900; }
-    .lb-table tr:nth-child(2) td { color: #e2e8f0; font-weight: 700; }
-    .lb-table tr:nth-child(3) td { color: #94a3b8; font-weight: 700; }
-    .lb-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .subtab-btn.active {
+      background: #5c67ff;
+      border-color: #5c67ff;
+      color: #ffed61;
+    }
+
+    /* Bar chart hover tooltip */
+    .group:hover .group-hover\:opacity-100 { opacity: 1; }
+    .opacity-0 { opacity: 0; }
+    .transition-opacity { transition: opacity 0.15s; }
   </style>
 </head>
 <body class="bg-slate-950 text-gray-200 min-h-screen flex flex-col text-sm">
@@ -164,16 +167,10 @@
     </span>
     <div x-data="navAuth()" x-cloak>
       <template x-if="!loggedIn">
-        <div class="flex items-center gap-2">
-          <a :href="signUpUrl"
-             class="px-3 py-1.5 bg-yellow-400 text-slate-950 text-xs font-black uppercase tracking-wider hover:bg-yellow-300 transition">
-            Create Account
-          </a>
-          <a :href="loginUrl"
-             class="px-3 py-1.5 border border-slate-600 text-slate-400 hover:border-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition">
-            Sign In
-          </a>
-        </div>
+        <a href="login.html"
+           class="px-3 py-1.5 bg-[#ffed61] text-slate-950 text-xs font-black uppercase tracking-wider hover:bg-[#fff9a0] transition">
+          Sign In
+        </a>
       </template>
       <template x-if="loggedIn">
         <div class="flex items-center gap-4">
@@ -191,7 +188,7 @@
 
     <!-- ═══ HERO + COUNTER ════════════════════════════════════════════════ -->
     <section class="relative px-8 py-12 flex flex-col gap-6 overflow-hidden"
-             style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);">
+             style="background: #5c67ff;">
 
       <!-- Subtle grid overlay -->
       <div class="absolute inset-0 opacity-5"
@@ -199,30 +196,30 @@
                                     repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.3) 39px,rgba(255,255,255,.3) 40px);">
       </div>
 
-      <div class="relative flex flex-col gap-4 max-w-5xl">
+      <div class="relative flex flex-col items-center gap-4 w-full">
 
         <!-- ── GLOBAL COUNTER ── -->
-        <div x-data="globalCounter()" class="flex flex-col gap-1">
-          <p class="text-6xl font-black tabular-nums text-yellow-400 leading-none counter-animate"
-             x-text="count.toLocaleString()">—</p>
-          <p class="text-xs text-indigo-300 uppercase tracking-widest mt-1">
+        <div x-data="globalCounter()" class="flex flex-col items-center gap-1 text-center">
+          <p class="text-6xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
+             x-text="String(count).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
+          <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1">
             total actions recorded on this site
           </p>
         </div>
 
-      </div>
+        <!-- ── TAB TOOLBAR ── -->
+        <div class="flex flex-wrap gap-2 justify-center w-full">
+          <button class="tab-btn active" data-tab="why" onclick="setTab('why')">
+            Why Unsubscribe?
+          </button>
+          <button class="tab-btn" data-tab="unsubscribe" onclick="setTab('unsubscribe')">
+            Unsubscribe Now
+          </button>
+          <button class="tab-btn" data-tab="leaderboards" onclick="setTab('leaderboards')">
+            Leaderboards
+          </button>
+        </div>
 
-      <!-- ── TAB TOOLBAR ── -->
-      <div class="relative flex flex-wrap gap-2 max-w-5xl">
-        <button class="tab-btn active" data-tab="why" onclick="setTab('why')">
-          Why Unsubscribe?
-        </button>
-        <button class="tab-btn" data-tab="unsubscribe" onclick="setTab('unsubscribe')">
-          Unsubscribe Now
-        </button>
-        <button class="tab-btn" data-tab="leaderboards" onclick="setTab('leaderboards')">
-          Leaderboards
-        </button>
       </div>
 
     </section>
@@ -231,38 +228,202 @@
     <div id="tab-root">
 
       <!-- ── WHY UNSUBSCRIBE? ── -->
-      <section id="tab-why" class="relative px-8 py-14 flex flex-col gap-8 max-w-5xl"
-               style="background: #0f172a;">
+      <section id="tab-why" class="flex flex-col bg-[#ffed61] text-slate-950">
 
-        <div class="section-label">Why Resist and Unsubscribe</div>
+        <!-- Sub-tab toolbar -->
+        <div class="flex flex-wrap justify-center gap-2 px-8 pt-10 pb-0">
+          <button class="subtab-btn active" data-subtab="general" onclick="setSubTab('general')">The Moment</button>
+          <button class="subtab-btn" data-subtab="whocares" onclick="setSubTab('whocares')">Who Cares?</button>
+          <button class="subtab-btn" data-subtab="different" onclick="setSubTab('different')">Why Is This Different?</button>
+          <button class="subtab-btn" data-subtab="share" onclick="setSubTab('share')">Why Share?</button>
+        </div>
 
-        <div class="flex flex-col gap-4 text-sm leading-loose text-slate-300 max-w-3xl">
-          <p>
-            Americans are feeling powerless to thwart the Trump administration's assault on our nation's values.
-            Praised by tech CEOs, surrounded by sycophants, and enriched by his return to the White House,
-            the president's actions march on unchecked. Americans, however, have a powerful weapon that has been hiding in plain sight.
-          </p>
-          <p>
-            First, we must recognize that the president is unfazed by citizen outrage, the courts, or the media.
-            He responds to one thing: <span class="text-white font-bold">the market.</span> The most potent weapon to resist the administration
-            is a targeted, month-long national economic strike — a coordinated campaign that attacks tech companies and firms enabling ICE —
-            to inflict maximum damage with minimal impact on consumers.
-          </p>
-          <p class="text-slate-400 italic border-l-2 border-yellow-400 pl-4">
-            — Scott Galloway
-          </p>
+        <!-- ── Sub-tab: The Moment (General) ── -->
+        <div id="subtab-general" class="flex flex-col items-center px-8 py-12">
+          <div class="flex flex-col gap-6 w-full max-w-3xl">
+
+            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950 leading-tight">
+              You Are Not Powerless.
+            </h1>
+
+            <div class="flex flex-col gap-4 text-base leading-loose text-slate-800">
+              <p>
+                Millions of Americans are feeling the same thing right now: a deep frustration, a sense of helplessness — like
+                no matter how loudly we speak, nothing changes. The courts, the media, the ballot box — all of it feels like
+                shouting into a void. The administration presses forward. The CEOs smile and nod.
+              </p>
+              <p>
+                But here's what they don't want you to realize: <span class="font-black text-slate-950">our spending is the one language they can't ignore.</span>
+                Together, millions of individual cancellations become a force that moves markets, drops stock prices, and lands
+                directly on the CEO's desk in the form of a quarterly earnings miss.
+              </p>
+              <p>
+                That's what The People's Scoreboard is for. Not protest. Not petitions. <span class="font-black text-slate-950">Economic action — tracked, visible, and growing.</span>
+                Every unsubscription you log here is counted, shared, and turned into real pressure on the companies
+                that are enabling the policies you oppose.
+              </p>
+              <p>
+                This only works if enough of us do it together. If this movement goes viral, we can actually make a dent.
+                And this site exists to show you — in real time — that it already is.
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-2 border-l-4 border-slate-950 pl-5">
+              <p class="text-slate-800 text-base leading-loose italic">
+                "Americans are feeling powerless to thwart the Trump administration's assault on our nation's values...
+                Americans, however, have a powerful weapon that has been hiding in plain sight."
+              </p>
+              <p class="text-slate-700 text-sm font-black uppercase tracking-wider">— Scott Galloway</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Who Cares? ── -->
+        <div id="subtab-whocares" class="flex flex-col items-center px-8 py-12" style="display:none;">
+          <div class="flex flex-col gap-6 w-full max-w-3xl">
+
+            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950 leading-tight">
+              The President Only Speaks One Language.
+            </h1>
+
+            <div class="flex flex-col gap-4 text-base leading-loose text-slate-800">
+              <p>
+                Marching doesn't move him. Petitions don't reach him. Outrage in the press is entertainment to him.
+                This president has made it clear — loudly and repeatedly — that he doesn't govern by public opinion.
+                He governs for his base, his donors, and his ego.
+              </p>
+              <p>
+                But there is one constituency he can't dismiss: <span class="font-black text-slate-950">the CEOs whose stock prices depend on subscriber growth.</span>
+                These are the men who stood on the inauguration stage. Who donated. Who bent the knee and called it "partnership."
+                They are the ones enabling these policies — and they are the ones with genuine influence over this administration.
+              </p>
+              <p>
+                When Amazon's stock drops because Prime subscriber counts miss analyst expectations, Jeff Bezos takes the call.
+                When Google's ad revenue softens, the board holds an emergency meeting. When Apple's services growth stalls,
+                Wall Street analysts downgrade the stock and Tim Cook faces questions he can't spin away.
+              </p>
+              <p>
+                <span class="font-black text-slate-950">We don't need to change the president's mind. We need to change the math for the people who fund him.</span>
+                Hit their subscriber numbers. Hit their market caps. Make the cost of enabling these policies greater than
+                the benefit. That's a conversation they will have.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Why Is This Different? ── -->
+        <div id="subtab-different" class="flex flex-col items-center px-8 py-12" style="display:none;">
+          <div class="flex flex-col gap-6 w-full max-w-3xl">
+
+            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950 leading-tight">
+              Why Most Boycotts Fail — And Why This One Won't.
+            </h1>
+
+            <div class="flex flex-col gap-4 text-base leading-loose text-slate-800">
+              <p>
+                Economic strikes have a poor track record, and the reasons are structural — not motivational.
+                Most boycotts fail for two predictable reasons:
+              </p>
+
+              <div class="flex flex-col gap-4">
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Problem 1: Executives Can't See It</p>
+                  <p>When you "boycott Amazon for a weekend" or "#DeleteUber," the company's finance team can't cleanly
+                  attribute any revenue drop to the campaign. One bad weekend looks like noise. A dip in app downloads
+                  gets blamed on seasonality. Without a direct, traceable signal, executives choose to ignore it — and
+                  they're often right to.</p>
+                </div>
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Problem 2: Boycotts Don't Last</p>
+                  <p>A boycott weekend ends. People go back. The moment passes. The news cycle moves on. Even a large,
+                  coordinated "stop shopping" event has almost no persistent financial signal because no one actually
+                  cancels anything — they just delay a purchase. Companies know this, and they wait it out.</p>
+                </div>
+              </div>
+
+              <p class="font-black text-slate-950 text-lg">Our movement solves both problems.</p>
+
+              <div class="flex flex-col gap-4">
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Solution 1: We Make the Impact Visible</p>
+                  <p>This site tracks every logged unsubscription and estimates the market cap impact based on subscriber
+                  value models. When 50,000 people cancel Amazon Prime, that's a calculable hit to Amazon's projected revenue
+                  and a clear signal to analysts. We translate individual actions into the language Wall Street understands: dollars.</p>
+                </div>
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Solution 2: Subscriptions Are Persistent by Nature</p>
+                  <p>We're not asking you to skip a purchase this weekend. We're asking you to cancel a recurring subscription.
+                  That cancellation is permanent. Its revenue impact compounds every month. A subscriber who leaves in February
+                  is still gone in September. That's a persistent, growing signal that can't be explained away as noise —
+                  and it shows up clearly in quarterly earnings.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Why Share? ── -->
+        <div id="subtab-share" class="flex flex-col items-center px-8 py-12" style="display:none;">
+          <div class="flex flex-col gap-6 w-full max-w-3xl">
+
+            <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950 leading-tight">
+              Virality Is the Whole Point.
+            </h1>
+
+            <div class="flex flex-col gap-4 text-base leading-loose text-slate-800">
+              <p>
+                One cancellation is a rounding error. Ten thousand is a signal. Ten million is a crisis for their quarterly earnings.
+                The difference between those numbers isn't individual conviction — it's whether the movement spreads.
+                <span class="font-black text-slate-950">Sharing isn't just encouraged here. It's the mechanism.</span>
+              </p>
+
+              <p class="font-black text-slate-950 text-lg">How the campaign system works:</p>
+
+              <div class="flex flex-col gap-4">
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Start Your Own Campaign</p>
+                  <p>Any user can create a named campaign — your friend group, your workplace Slack, your neighborhood,
+                  your political org. Share a unique link. Everyone who takes action through your link gets attributed
+                  to your campaign.</p>
+                </div>
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Compete for Impact</p>
+                  <p>Campaigns appear on the leaderboard ranked by the estimated market cap impact of their members'
+                  combined actions. Who did more — your city or theirs? Your university or the rival school?
+                  Your circle or your coworker's? The competition makes sharing sticky.</p>
+                </div>
+                <div class="border-l-4 border-slate-950 pl-5">
+                  <p class="font-black text-slate-950 uppercase tracking-wide text-sm mb-1">Make the Impact Real</p>
+                  <p>Each campaign gets a running estimate of the market cap pressure its members have generated —
+                  calculated from subscriber lifetime value models for each company. Share that number. Screenshot it.
+                  Post it. When your campaign has "moved" $2.4M in estimated market cap, that's a real number worth talking about.</p>
+                </div>
+              </div>
+
+              <p>
+                Every share you post is a recruitment. Every friend who cancels is compounding pressure. The goal isn't
+                to go viral once — it's to build a movement that persists long enough to show up in earnings calls,
+                analyst reports, and boardroom conversations.
+                <span class="font-black text-slate-950">This is how individual outrage becomes collective leverage.</span>
+              </p>
+            </div>
+
+          </div>
         </div>
 
       </section>
 
       <!-- ── UNSUBSCRIBE NOW ── -->
-      <section id="tab-unsubscribe" class="px-8 py-14 flex flex-col gap-14 bg-yellow-400 text-slate-950" style="display:none;">
-        <div class="section-label-dark">How to Resist</div>
+      <section id="tab-unsubscribe" class="px-8 py-14 flex flex-col gap-14 bg-[#ffed61] text-slate-950" style="display:none;">
+        <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950">How to Resist</h1>
 
         <!-- ── GROUND ZERO ── -->
         <div class="flex flex-col gap-6">
           <div class="flex flex-col gap-1">
-            <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Ground Zero</h2>
+            <h2 class="text-3xl font-black uppercase tracking-tight text-slate-950">Ground Zero</h2>
             <p class="text-slate-700 text-xs max-w-2xl leading-relaxed">
               Subscription-driven consumer tech companies with outsized influence over the national economy and our president.
             </p>
@@ -521,7 +682,7 @@
         <!-- ── BLAST RADIUS ── -->
         <div class="flex flex-col gap-6">
           <div class="flex flex-col gap-1">
-            <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Blast Radius</h2>
+            <h2 class="text-3xl font-black uppercase tracking-tight text-slate-950">Blast Radius</h2>
             <p class="text-slate-700 text-xs max-w-2xl leading-relaxed">
               Consumer-facing companies identified as active enablers of ICE.
             </p>
@@ -679,56 +840,87 @@
       </section>
 
       <!-- ── LEADERBOARDS ── -->
-      <section id="tab-leaderboards" class="px-8 py-14 flex flex-col gap-8 bg-slate-950" style="display:none;">
+      <section id="tab-leaderboards" class="px-8 py-14 flex flex-col gap-8 bg-[#ffed61] text-slate-950" style="display:none;">
 
-        <div class="section-label">Leaderboards</div>
+        <div class="section-label-dark">Leaderboards</div>
 
-        <div class="flex flex-col gap-2 max-w-2xl">
-          <h2 class="text-2xl font-black uppercase tracking-tight text-white">Top Resisters</h2>
-          <p class="text-slate-500 text-xs leading-relaxed">
-            Ranked by total actions taken. Updated in real time.
+        <div class="flex flex-col gap-2">
+          <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950">Top Resisters</h1>
+          <p class="text-slate-700 text-xs leading-relaxed">
+            Ranked by total actions taken. Hover over a bar to see user details.
           </p>
         </div>
 
-        <div x-data="leaderboard()" class="max-w-2xl">
+        <div x-data="leaderboard()">
 
           <!-- Loading state -->
           <template x-if="loading">
-            <p class="text-slate-600 text-xs uppercase tracking-widest animate-pulse">Loading leaderboard...</p>
+            <p class="text-slate-700 text-xs uppercase tracking-widest animate-pulse">Loading leaderboard...</p>
           </template>
 
           <!-- Error state -->
           <template x-if="!loading && error">
-            <p class="text-slate-600 text-xs">Could not load leaderboard data.</p>
+            <p class="text-slate-700 text-xs">Could not load leaderboard data.</p>
           </template>
 
           <!-- Empty state -->
           <template x-if="!loading && !error && rows.length === 0">
-            <p class="text-slate-600 text-xs">No actions recorded yet. Be the first!</p>
+            <p class="text-slate-700 text-xs">No actions recorded yet. Be the first!</p>
           </template>
 
-          <!-- Table -->
+          <!-- Bar chart -->
           <template x-if="!loading && !error && rows.length > 0">
-            <div>
-              <table class="lb-table">
-                <thead>
-                  <tr>
-                    <th style="width:3rem;">Rank</th>
-                    <th>User</th>
-                    <th style="width:6rem; text-align:right;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <template x-for="row in rows" :key="row.rank">
-                    <tr>
-                      <td x-text="'#' + row.rank"></td>
-                      <td x-text="row.display"></td>
-                      <td style="text-align:right; font-variant-numeric: tabular-nums;" x-text="row.actions.toLocaleString()"></td>
-                    </tr>
+            <div class="flex flex-col gap-4">
+
+              <!-- Y-axis label -->
+              <div class="flex items-center gap-2">
+                <span class="text-slate-700 text-xs uppercase tracking-widest font-bold">Actions</span>
+              </div>
+
+              <!-- Chart area -->
+              <div class="relative w-full overflow-x-auto">
+                <div class="flex items-end gap-1.5 min-w-0"
+                     style="height: 260px; padding-bottom: 40px; padding-left: 4px;">
+
+                  <template x-for="(row, i) in rows" :key="row.rank">
+                    <!-- Bar + label column -->
+                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[28px] max-w-[72px] h-full justify-end relative group"
+                         style="height: 100%;">
+
+                      <!-- Tooltip -->
+                      <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-10
+                                  bg-slate-950 text-[#ffed61] text-xs font-black px-2 py-1
+                                  whitespace-nowrap pointer-events-none
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                           style="border: 1px solid #ffed61;">
+                        <span x-text="row.display"></span><br>
+                        <span x-text="row.actions + ' action' + (row.actions !== 1 ? 's' : '')"></span>
+                      </div>
+
+                      <!-- Bar -->
+                      <div class="w-full rounded-none transition-all duration-300 cursor-default"
+                           :style="`
+                             height: ${maxActions > 0 ? Math.max(4, Math.round((row.actions / maxActions) * 200)) : 4}px;
+                             background: ${i === 0 ? '#1e293b' : i === 1 ? '#334155' : i === 2 ? '#475569' : '#64748b'};
+                           `">
+                      </div>
+
+                      <!-- X-axis rank label -->
+                      <span class="text-slate-700 text-xs font-black absolute"
+                            style="bottom: 0; line-height: 1.5;"
+                            x-text="'#' + row.rank"></span>
+
+                    </div>
                   </template>
-                </tbody>
-              </table>
-              <p class="text-slate-700 text-xs mt-4" x-text="rows.length + ' participants'"></p>
+
+                </div>
+
+                <!-- X-axis line -->
+                <div style="border-top: 2px solid #1e293b; margin-top: -2px; margin-left: 4px;"></div>
+                <p class="text-slate-700 text-xs uppercase tracking-widest text-center mt-2 font-bold">User Rank</p>
+              </div>
+
+              <p class="text-slate-700 text-xs" x-text="rows.length + ' participant' + (rows.length !== 1 ? 's' : '')"></p>
             </div>
           </template>
 
@@ -768,8 +960,22 @@
       });
     }
 
+    // ─── Sub-tab state (inside Why Unsubscribe) ───────────────────────────────
+    function setSubTab(name) {
+      ['general', 'whocares', 'different', 'share'].forEach(id => {
+        const el = document.getElementById('subtab-' + id);
+        if (el) el.style.display = (id === name) ? '' : 'none';
+      });
+      document.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.subtab === name);
+      });
+    }
+
     // Initialize tabs on load
-    document.addEventListener('DOMContentLoaded', () => setTab('why'));
+    document.addEventListener('DOMContentLoaded', () => {
+      setTab('why');
+      setSubTab('general');
+    });
 
     // ─── Shared user votes cache ──────────────────────────────────────────────
     let _votedButtons = null;
@@ -792,8 +998,7 @@
     function navAuth() {
       return {
         loggedIn:  isLoggedIn(),
-        loginUrl:  getLoginUrl(),
-        signUpUrl: getSignUpUrl(),
+        loginUrl:  'login.html',
         userEmail: getCurrentUser()?.email ?? "",
       };
     }
@@ -863,16 +1068,18 @@
     // ─── Leaderboard ──────────────────────────────────────────────────────────
     function leaderboard() {
       return {
-        rows:    [],
-        loading: true,
-        error:   false,
+        rows:       [],
+        maxActions: 0,
+        loading:    true,
+        error:      false,
 
         async init() {
           try {
             const res  = await fetch(`${CONFIG.apiEndpoint}/leaderboard`);
             if (!res.ok) throw new Error('non-200');
             const data = await res.json();
-            this.rows  = data.leaderboard ?? [];
+            this.rows       = data.leaderboard ?? [];
+            this.maxActions = this.rows.length > 0 ? this.rows[0].actions : 0;
           } catch {
             this.error = true;
           } finally {
