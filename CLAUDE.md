@@ -74,16 +74,16 @@ Amazon (6), Apple (6), Google (4), Microsoft (3), Paramount+ (1), Meta (2), Uber
 ## Auth Flow (Passwordless EMAIL_OTP)
 No Hosted UI. All auth handled in `login.html` via direct Cognito IDP API calls.
 
-### New user
+### New user (sign up)
 1. `initiateOtpAuth(email)` → `UserNotFoundException`
 2. `signUpNewUser(email)` → Cognito `SignUp` → sends **6-digit** verification email
-3. User enters code → `confirmSignUpOnly(email, code)` → account confirmed
-4. `initiateOtpAuth(email)` → sends **8-digit** OTP email
-5. User enters code → `respondToOtp(session, email, code)` → tokens saved → redirect
+3. User enters 6-digit code → `confirmSignUpOnly(email, code)` → account confirmed
+4. `initiateOtpAuth(email)` → sends **8-digit** OTP sign-in email automatically
+5. User enters 8-digit code → `respondToOtp(session, email, code)` → tokens saved → redirect
 
-### Existing user
+### Existing user (sign in)
 1. `initiateOtpAuth(email)` → sends **8-digit** OTP email
-2. User enters code → `respondToOtp(session, email, code)` → tokens saved → redirect
+2. User enters 8-digit code → `respondToOtp(session, email, code)` → tokens saved → redirect
 
 Tokens stored in `sessionStorage`. Protected API calls include `id_token` in `Authorization` header.
 - User Pool: `us-east-1_YRVrviFVa`
