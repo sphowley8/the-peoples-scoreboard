@@ -59,7 +59,7 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="bg-gray-900 rounded-2xl p-6 flex flex-col gap-1 border border-gray-800">
             <p class="text-4xl font-black text-indigo-400" x-text="stats.totalClicks">—</p>
             <p class="text-sm text-gray-500">Total Unsubscribes</p>
@@ -68,34 +68,56 @@
             <p class="text-4xl font-black text-green-400" x-text="stats.rank">—</p>
             <p class="text-sm text-gray-500">Global Rank</p>
           </div>
-          <div class="bg-gray-900 rounded-2xl p-6 flex flex-col gap-1 border border-gray-800">
-            <p class="text-4xl font-black text-yellow-400" x-text="stats.streak">—</p>
-            <p class="text-sm text-gray-500">Day Streak</p>
-          </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- My Campaign -->
         <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-800">
-            <h2 class="font-bold text-lg">Recent Activity</h2>
+            <h2 class="font-bold text-lg">My Campaign</h2>
+            <p class="text-xs text-gray-500 mt-0.5">Share your link — every action taken by someone who arrives via it counts toward your campaign on the leaderboard.</p>
           </div>
-          <template x-if="activity.length === 0">
-            <p class="px-6 py-8 text-gray-600 text-sm text-center">No activity yet — go cast your first vote!</p>
+
+          <!-- Loading state -->
+          <template x-if="campaign.loading">
+            <p class="px-6 py-6 text-gray-600 text-sm">Loading…</p>
           </template>
-          <ul>
-            <template x-for="item in activity" :key="item.event_id">
-              <li class="flex items-center justify-between px-6 py-4 border-b border-gray-800 last:border-0">
-                <div class="flex items-center gap-3">
-                  <span class="text-xl">🚫</span>
-                  <div>
-                    <p class="text-sm font-semibold" x-text="item.button_id"></p>
-                    <p class="text-xs text-gray-500" x-text="item.target_url"></p>
-                  </div>
-                </div>
-                <span class="text-xs text-gray-600" x-text="formatDate(item.timestamp)"></span>
-              </li>
-            </template>
-          </ul>
+
+          <!-- Has campaign -->
+          <template x-if="!campaign.loading && campaign.id">
+            <div class="px-6 py-5 flex flex-col gap-3">
+              <p class="text-sm text-gray-400">Campaign name: <span class="text-white font-semibold" x-text="campaign.name"></span></p>
+              <div class="flex items-center gap-2">
+                <input type="text" readonly
+                       :value="campaign.shareUrl"
+                       class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 text-xs text-gray-300 rounded focus:outline-none" />
+                <button @click="copyCampaignLink()"
+                        class="px-4 py-2 bg-[#ffed61] text-gray-950 text-xs font-black uppercase tracking-wider hover:bg-[#fff9a0] transition rounded">
+                  <span x-show="!campaign.copied">Copy</span>
+                  <span x-show="campaign.copied">Copied!</span>
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- No campaign yet -->
+          <template x-if="!campaign.loading && !campaign.id">
+            <div class="px-6 py-5 flex flex-col gap-3">
+              <p class="text-sm text-gray-400">You don't have a campaign yet. Create one to get your personal share link.</p>
+              <form @submit.prevent="createCampaign()" class="flex flex-col gap-3">
+                <input type="text"
+                       x-model="campaign.newName"
+                       maxlength="32"
+                       placeholder="Campaign name (max 32 chars)"
+                       class="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-sm text-white placeholder-gray-600 rounded focus:outline-none focus:border-indigo-500 transition" />
+                <p x-show="campaign.error" x-text="campaign.error" class="text-red-400 text-xs"></p>
+                <button type="submit" :disabled="campaign.creating"
+                        class="px-4 py-2 bg-[#ffed61] text-gray-950 text-xs font-black uppercase tracking-wider hover:bg-[#fff9a0] transition rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                  <span x-show="!campaign.creating">Create Campaign →</span>
+                  <span x-show="campaign.creating">Creating…</span>
+                </button>
+              </form>
+            </div>
+          </template>
         </div>
 
       </div>
@@ -123,6 +145,17 @@
         },
         activity: [],
 
+        campaign: {
+          loading:  true,
+          id:       null,
+          name:     "",
+          shareUrl: "",
+          newName:  "",
+          creating: false,
+          copied:   false,
+          error:    "",
+        },
+
         async init() {
           if (!this.loggedIn) return;
 
@@ -135,7 +168,14 @@
             ? new Date(createdAt * 1000).toLocaleDateString("en-US", { month: "long", year: "numeric" })
             : "Unknown";
 
-          // Fetch real user activity from API
+          // Fetch user activity and campaign in parallel
+          await Promise.all([
+            this.loadActivity(),
+            this.loadCampaign(),
+          ]);
+        },
+
+        async loadActivity() {
           try {
             const res = await fetch(`${CONFIG.apiEndpoint}/user-activity?limit=20`, {
               headers: { "Authorization": getIdToken() },
@@ -145,6 +185,69 @@
             this.stats.totalClicks = data.count ?? 0;
           } catch {
             this.activity = [];
+          }
+        },
+
+        async loadCampaign() {
+          try {
+            const res = await fetch(`${CONFIG.apiEndpoint}/campaign`, {
+              headers: { "Authorization": getIdToken() },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.campaign.id       = data.campaign_id;
+              this.campaign.name     = data.campaign_name;
+              this.campaign.shareUrl = data.share_url;
+            }
+            // 404 = no campaign yet — leave id as null
+          } catch {
+            // network error — leave loading state cleared, id null
+          } finally {
+            this.campaign.loading = false;
+          }
+        },
+
+        async createCampaign() {
+          this.campaign.error = "";
+          const name = this.campaign.newName.trim();
+          if (!name) {
+            this.campaign.error = "Please enter a campaign name.";
+            return;
+          }
+          this.campaign.creating = true;
+          try {
+            const res = await fetch(`${CONFIG.apiEndpoint}/campaign`, {
+              method:  "POST",
+              headers: {
+                "Authorization": getIdToken(),
+                "Content-Type":  "application/json",
+              },
+              body: JSON.stringify({ campaign_name: name }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              this.campaign.error = data.error || "Failed to create campaign.";
+              return;
+            }
+            this.campaign.id       = data.campaign_id;
+            this.campaign.name     = data.campaign_name;
+            this.campaign.shareUrl = data.share_url;
+          } catch {
+            this.campaign.error = "Network error — please try again.";
+          } finally {
+            this.campaign.creating = false;
+          }
+        },
+
+        async copyCampaignLink() {
+          try {
+            await navigator.clipboard.writeText(this.campaign.shareUrl);
+            this.campaign.copied = true;
+            setTimeout(() => { this.campaign.copied = false; }, 2000);
+          } catch {
+            // Fallback: select the input text
+            const input = document.querySelector('input[readonly]');
+            if (input) { input.select(); document.execCommand('copy'); }
           }
         },
 

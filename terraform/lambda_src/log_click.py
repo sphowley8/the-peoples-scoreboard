@@ -38,9 +38,10 @@ def handler(event, context):
 
     # Parse body
     try:
-        body       = json.loads(event.get("body") or "{}")
-        button_id  = body["button_id"]
-        target_url = body.get("target_url", "")
+        body        = json.loads(event.get("body") or "{}")
+        button_id   = body["button_id"]
+        target_url  = body.get("target_url", "")
+        campaign_id = body.get("campaign_id", "none")  # optional, defaults to "none"
     except (json.JSONDecodeError, KeyError):
         return _response(400, {"error": "Invalid request body"})
 
@@ -66,11 +67,12 @@ def handler(event, context):
     # Write to the main click log
     table.put_item(
         Item={
-            "user_id":   user_id,
-            "timestamp": timestamp,
-            "button_id": button_id,
-            "target_url": target_url,
-            "event_id":  str(uuid.uuid4()),
+            "user_id":     user_id,
+            "timestamp":   timestamp,
+            "button_id":   button_id,
+            "target_url":  target_url,
+            "campaign_id": campaign_id,
+            "event_id":    str(uuid.uuid4()),
         }
     )
 

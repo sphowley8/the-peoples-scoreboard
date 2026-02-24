@@ -1,9 +1,13 @@
 """
 Lambda: GET /leaderboard
 
-Returns a ranked list of users by total actions (click count), descending.
-Scans the dedup table to count actions per user_id.
-User emails are resolved from Cognito where possible; falls back to anonymized IDs.
+Returns campaigns ranked by total actions, descending.
+Scans the click-log table and groups by campaign_id.
+Pre-feature entries without a campaign_id are grouped under "none".
+
+Campaign display names come from the campaigns table.
+"none" is displayed as "No Campaign".
+
 No authentication required — public endpoint.
 """
 
@@ -11,82 +15,60 @@ import json
 import os
 
 import boto3
+from boto3.dynamodb.conditions import Key
 
-DEDUP_TABLE_NAME = os.environ["DEDUP_TABLE"]
-USER_POOL_ID     = os.environ.get("USER_POOL_ID", "")
+CLICK_LOG_TABLE  = os.environ["DYNAMODB_TABLE"]
+CAMPAIGNS_TABLE  = os.environ["CAMPAIGNS_TABLE"]
 
-dynamodb   = boto3.resource("dynamodb")
-dedup_table = dynamodb.Table(DEDUP_TABLE_NAME)
-cognito    = boto3.client("cognito-idp", region_name="us-east-1")
-
-
-def _anonymize(user_id: str) -> str:
-    """Return a stable short handle like 'User #a3f2'."""
-    return "User #" + user_id[-4:]
+dynamodb         = boto3.resource("dynamodb")
+click_log_table  = dynamodb.Table(CLICK_LOG_TABLE)
+campaigns_table  = dynamodb.Table(CAMPAIGNS_TABLE)
 
 
 def handler(event, context):
-    # Scan the dedup table to get all (user_id, button_id) pairs
+    # Scan click-log, group by campaign_id
     counts: dict[str, int] = {}
     try:
-        paginator_kwargs = {"TableName": DEDUP_TABLE_NAME}
-        scan_kwargs: dict = {"ProjectionExpression": "user_id"}
+        scan_kwargs: dict = {"ProjectionExpression": "campaign_id"}
         while True:
-            resp = dedup_table.scan(**scan_kwargs)
+            resp = click_log_table.scan(**scan_kwargs)
             for item in resp.get("Items", []):
-                uid = item.get("user_id")
-                if uid:
-                    counts[uid] = counts.get(uid, 0) + 1
+                cid = item.get("campaign_id", "none") or "none"
+                counts[cid] = counts.get(cid, 0) + 1
             last = resp.get("LastEvaluatedKey")
             if not last:
                 break
             scan_kwargs["ExclusiveStartKey"] = last
-    except Exception as e:
+    except Exception:
         return _response(500, {"error": "Failed to fetch leaderboard data"})
 
     # Sort descending by count
     ranked = sorted(counts.items(), key=lambda x: x[1], reverse=True)
 
-    # Resolve display names via Cognito (best-effort, batch in chunks of 100)
-    email_map: dict[str, str] = {}
-    if USER_POOL_ID and ranked:
-        user_ids = [uid for uid, _ in ranked]
-        # ListUsers can filter by sub but only one at a time; use a scan approach
-        # Instead, fetch all users with a ListUsers scan (up to 60 per page)
+    # Batch-fetch campaign names for all non-"none" campaign IDs
+    name_map: dict[str, str] = {}
+    campaign_ids = [cid for cid, _ in ranked if cid != "none"]
+    for cid in campaign_ids:
         try:
-            paginate_kwargs: dict = {
-                "UserPoolId": USER_POOL_ID,
-                "AttributesToGet": ["email", "sub"],
-                "Limit": 60,
-            }
-            while True:
-                resp = cognito.list_users(**paginate_kwargs)
-                for u in resp.get("Users", []):
-                    attrs = {a["Name"]: a["Value"] for a in u.get("Attributes", [])}
-                    sub   = attrs.get("sub")
-                    email = attrs.get("email", "")
-                    if sub:
-                        # Mask email: show first 2 chars + domain
-                        if "@" in email:
-                            local, domain = email.split("@", 1)
-                            masked = local[:2] + "***@" + domain
-                        else:
-                            masked = _anonymize(sub)
-                        email_map[sub] = masked
-                token = resp.get("PaginationToken")
-                if not token:
-                    break
-                paginate_kwargs["PaginationToken"] = token
+            resp = campaigns_table.get_item(Key={"campaign_id": cid})
+            item = resp.get("Item")
+            if item:
+                name_map[cid] = item.get("campaign_name", f"Campaign {cid}")
         except Exception:
-            pass  # fall back to anonymized IDs
+            name_map[cid] = f"Campaign {cid}"  # fallback
 
     # Build response rows
     rows = []
-    for rank, (uid, count) in enumerate(ranked, start=1):
+    for rank, (cid, count) in enumerate(ranked, start=1):
+        if cid == "none":
+            display = "No Campaign"
+        else:
+            display = name_map.get(cid, f"Campaign {cid}")
         rows.append({
-            "rank":    rank,
-            "display": email_map.get(uid, _anonymize(uid)),
-            "actions": count,
+            "rank":        rank,
+            "campaign_id": cid,
+            "display":     display,
+            "actions":     count,
         })
 
     return _response(200, {"leaderboard": rows, "total_users": len(rows)})

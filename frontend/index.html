@@ -173,8 +173,11 @@
         </a>
       </template>
       <template x-if="loggedIn">
-        <div class="flex items-center gap-4">
-          <a href="profile.html" class="text-xs text-slate-400 hover:text-white transition" x-text="userEmail"></a>
+        <div class="flex items-center gap-3">
+          <a href="profile.html"
+             class="px-3 py-1.5 border border-slate-600 text-slate-300 hover:border-[#ffed61] hover:text-[#ffed61] text-xs font-bold uppercase tracking-wider transition">
+            My Profile
+          </a>
           <button @click="logout()"
                   class="px-3 py-1.5 border border-slate-600 text-slate-400 hover:border-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition">
             Sign Out
@@ -198,21 +201,50 @@
 
       <div class="relative flex flex-col items-center gap-4 w-full">
 
-        <!-- ── GLOBAL COUNTER ── -->
-        <div x-data="globalCounter()" class="flex flex-col items-center gap-1 text-center">
-          <p class="text-6xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
-             x-text="String(count).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
-          <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1">
-            total actions recorded on this site
-          </p>
+        <!-- ── COUNTERS ── -->
+        <div x-data="heroCounters()" class="w-full max-w-3xl">
+
+          <!-- Two-panel layout when a campaign ?ref= is active -->
+          <template x-if="campaignId !== 'none'">
+            <div class="flex flex-col sm:flex-row items-stretch gap-4 w-full">
+
+              <!-- Left: All Campaigns total -->
+              <div class="flex-1 flex flex-col items-center gap-1 text-center px-6 py-4 border border-[#a5acff]/20">
+                <p class="text-5xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
+                   x-text="String(globalCount).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
+                <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1">All Campaigns</p>
+              </div>
+
+              <!-- Right: This campaign -->
+              <div class="flex-1 flex flex-col items-center gap-1 text-center px-6 py-4 border border-[#a5acff]/20">
+                <p class="text-5xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
+                   x-text="String(campaignCount).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
+                <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1"
+                   x-text="campaignName ? campaignName : 'This Campaign'"></p>
+              </div>
+
+            </div>
+          </template>
+
+          <!-- Single counter when no campaign is active -->
+          <template x-if="campaignId === 'none'">
+            <div class="flex flex-col items-center gap-1 text-center">
+              <p class="text-6xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
+                 x-text="String(globalCount).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
+              <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1">
+                total actions recorded on this site
+              </p>
+            </div>
+          </template>
+
         </div>
 
         <!-- ── TAB TOOLBAR ── -->
         <div class="flex flex-wrap gap-2 justify-center w-full">
-          <button class="tab-btn active" data-tab="why" onclick="setTab('why')">
+          <button class="tab-btn" data-tab="why" onclick="setTab('why')">
             Why Unsubscribe?
           </button>
-          <button class="tab-btn" data-tab="unsubscribe" onclick="setTab('unsubscribe')">
+          <button class="tab-btn active" data-tab="unsubscribe" onclick="setTab('unsubscribe')">
             Unsubscribe Now
           </button>
           <button class="tab-btn" data-tab="leaderboards" onclick="setTab('leaderboards')">
@@ -434,7 +466,7 @@
 
             <!-- Amazon -->
             <div class="company-card-yellow flex flex-col gap-2">
-              <p class="text-base font-black text-slate-950 tracking-tight mb-1">amazon</p>
+              <p class="text-base font-black text-slate-950 tracking-tight mb-1">Amazon</p>
               <ul class="flex flex-col gap-1.5">
                 <li x-data="linkAction('amazon-prime', 'https://www.amazon.com/amazonprime')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
@@ -845,9 +877,9 @@
         <div class="section-label-dark">Leaderboards</div>
 
         <div class="flex flex-col gap-2">
-          <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950">Top Resisters</h1>
+          <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950">Top Campaigns</h1>
           <p class="text-slate-700 text-xs leading-relaxed">
-            Ranked by total actions taken. Hover over a bar to see user details.
+            Ranked by total actions driven. Hover over a bar to see campaign details.
           </p>
         </div>
 
@@ -884,17 +916,18 @@
 
                   <template x-for="(row, i) in rows" :key="row.rank">
                     <!-- Bar + label column -->
-                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[28px] max-w-[72px] h-full justify-end relative group"
-                         style="height: 100%;">
+                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[28px] max-w-[72px] h-full justify-end relative"
+                         style="height: 100%;"
+                         x-data="{ hovered: false }"
+                         @mouseenter="hovered = true"
+                         @mouseleave="hovered = false">
 
-                      <!-- Tooltip -->
-                      <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-10
-                                  bg-slate-950 text-[#ffed61] text-xs font-black px-2 py-1
-                                  whitespace-nowrap pointer-events-none
-                                  opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                           style="border: 1px solid #ffed61;">
-                        <span x-text="row.display"></span><br>
-                        <span x-text="row.actions + ' action' + (row.actions !== 1 ? 's' : '')"></span>
+                      <!-- Tooltip: anchored to top-right of bar column -->
+                      <div x-show="hovered"
+                           x-cloak
+                           style="position: absolute; top: 0; left: 100%; margin-left: 6px; z-index: 9999; pointer-events: none; background: #4b5563; padding: 6px 10px; white-space: nowrap;">
+                        <p class="text-xs font-black whitespace-nowrap" style="color: #3b82f6;" x-text="row.display"></p>
+                        <p class="text-xs whitespace-nowrap" style="color: #93c5fd;" x-text="row.actions + ' action' + (row.actions !== 1 ? 's' : '')"></p>
                       </div>
 
                       <!-- Bar -->
@@ -917,7 +950,7 @@
 
                 <!-- X-axis line -->
                 <div style="border-top: 2px solid #1e293b; margin-top: -2px; margin-left: 4px;"></div>
-                <p class="text-slate-700 text-xs uppercase tracking-widest text-center mt-2 font-bold">User Rank</p>
+                <p class="text-slate-700 text-xs uppercase tracking-widest text-center mt-2 font-bold">Campaign Rank</p>
               </div>
 
               <p class="text-slate-700 text-xs" x-text="rows.length + ' participant' + (rows.length !== 1 ? 's' : '')"></p>
@@ -973,7 +1006,7 @@
 
     // Initialize tabs on load
     document.addEventListener('DOMContentLoaded', () => {
-      setTab('why');
+      setTab('unsubscribe');
       setSubTab('general');
     });
 
@@ -1003,11 +1036,16 @@
       };
     }
 
-    // ─── Global counter ───────────────────────────────────────────────────────
-    function globalCounter() {
+    // ─── Hero counters (global + optional campaign panel) ────────────────────
+    function heroCounters() {
       return {
-        count: 0,
+        globalCount:   0,
+        campaignCount: 0,
+        campaignId:    getCampaignId(),
+        campaignName:  getCampaignName(),
+
         async init() {
+          // Always fetch global count from all buttons in parallel
           try {
             const results = await Promise.all(
               ALL_BUTTON_IDS.map(id =>
@@ -1015,8 +1053,20 @@
                   .then(r => r.json()).then(d => d.count ?? 0).catch(() => 0)
               )
             );
-            this.count = results.reduce((a, b) => a + b, 0);
-          } catch { this.count = 0; }
+            this.globalCount = results.reduce((a, b) => a + b, 0);
+          } catch { this.globalCount = 0; }
+
+          // If a campaign ref is active, look up its action count from the leaderboard
+          if (this.campaignId !== 'none') {
+            try {
+              const res  = await fetch(`${CONFIG.apiEndpoint}/leaderboard`);
+              const data = await res.json();
+              const row  = (data.leaderboard ?? []).find(r => r.campaign_id === this.campaignId);
+              this.campaignCount = row ? row.actions : 0;
+              // If we didn't get a name from the URL, try the leaderboard display name
+              if (!this.campaignName && row) this.campaignName = row.display;
+            } catch { this.campaignCount = 0; }
+          }
         },
       };
     }
@@ -1051,16 +1101,39 @@
 
         async handleClick() {
           window.open(this.url, "_blank", "noopener,noreferrer");
-          if (this.clicked || !this.loggedIn) return;
-          try {
-            const res = await apiPost("/log-click", {
-              button_id:  this.buttonId,
-              target_url: this.url,
-            });
-            if (res.error === "Already voted") { this.clicked = true; return; }
-            this.clicked = true;
-            if (_votedButtons) _votedButtons.push(this.buttonId);
-          } catch { /* silently fail — link already opened */ }
+          if (this.clicked) return;
+
+          const campaignId = getCampaignId();
+
+          if (this.loggedIn) {
+            // Logged-in path: record against user account, include campaign if active
+            try {
+              const res = await apiPost("/log-click", {
+                button_id:   this.buttonId,
+                target_url:  this.url,
+                campaign_id: campaignId,
+              });
+              if (res.error === "Already voted") { this.clicked = true; return; }
+              this.clicked = true;
+              if (_votedButtons) _votedButtons.push(this.buttonId);
+            } catch { /* silently fail — link already opened */ }
+          } else if (campaignId !== "none") {
+            // Anonymous + campaign link path: record against campaign only
+            try {
+              const res = await fetch(`${CONFIG.apiEndpoint}/log-campaign-click`, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({
+                  button_id:   this.buttonId,
+                  target_url:  this.url,
+                  campaign_id: campaignId,
+                  session_id:  getOrCreateSessionId(),
+                }),
+              });
+              if (res.ok || res.status === 409) this.clicked = true;
+            } catch { /* silently fail */ }
+          }
+          // Anonymous + no campaign: nothing to record
         },
       };
     }

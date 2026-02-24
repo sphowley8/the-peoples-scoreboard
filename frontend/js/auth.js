@@ -1,3 +1,36 @@
+// ─── Campaign referral tracking ───────────────────────────────────────────────
+// If the page was opened with ?ref=<campaign_id>&name=<campaign_name>, store both.
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const ref  = params.get("ref");
+  const name = params.get("name");
+  if (ref)  sessionStorage.setItem("campaign_id",   ref);
+  if (name) sessionStorage.setItem("campaign_name", name);
+})();
+
+/** Returns the active campaign ID for this session, or "none". */
+function getCampaignId() {
+  return sessionStorage.getItem("campaign_id") || "none";
+}
+
+/** Returns the active campaign name for this session, or null. */
+function getCampaignName() {
+  return sessionStorage.getItem("campaign_name") || null;
+}
+
+/**
+ * Returns a stable session ID for anonymous click attribution.
+ * Generated once per session and stored in sessionStorage.
+ */
+function getOrCreateSessionId() {
+  let sid = sessionStorage.getItem("session_id");
+  if (!sid) {
+    sid = crypto.randomUUID();
+    sessionStorage.setItem("session_id", sid);
+  }
+  return sid;
+}
+
 // ─── Cognito Config ───────────────────────────────────────────────────────────
 const CONFIG = {
   region:      "us-east-1",

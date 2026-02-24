@@ -47,7 +47,7 @@ resource "aws_iam_role_policy" "lambda_dynamo" {
         ]
       },
       {
-        # Dedup table
+        # Dedup table (logged-in user dedup)
         Effect = "Allow"
         Action = [
           "dynamodb:PutItem",
@@ -57,6 +57,32 @@ resource "aws_iam_role_policy" "lambda_dynamo" {
         ]
         Resource = [
           aws_dynamodb_table.click_dedup.arn,
+        ]
+      },
+      {
+        # Campaigns table
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+        ]
+        Resource = [
+          aws_dynamodb_table.campaigns.arn,
+          "${aws_dynamodb_table.campaigns.arn}/index/*",
+        ]
+      },
+      {
+        # Campaign click dedup table (anonymous session dedup)
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+        ]
+        Resource = [
+          aws_dynamodb_table.campaign_click_dedup.arn,
         ]
       },
     ]
@@ -78,6 +104,7 @@ resource "aws_lambda_function" "log_click" {
     variables = {
       DYNAMODB_TABLE = aws_dynamodb_table.click_log.name
       DEDUP_TABLE    = aws_dynamodb_table.click_dedup.name
+      CAMPAIGNS_TABLE = aws_dynamodb_table.campaigns.name
     }
   }
 }
@@ -174,30 +201,67 @@ resource "aws_lambda_function" "get_leaderboard" {
 
   environment {
     variables = {
-      DEDUP_TABLE  = aws_dynamodb_table.click_dedup.name
-      USER_POOL_ID = aws_cognito_user_pool.main.id
+      DYNAMODB_TABLE  = aws_dynamodb_table.click_log.name
+      CAMPAIGNS_TABLE = aws_dynamodb_table.campaigns.name
     }
   }
 }
 
-resource "aws_iam_role_policy" "lambda_cognito_leaderboard" {
-  name = "cognito-list-users"
-  role = aws_iam_role.lambda_exec.id
+resource "aws_lambda_function" "log_campaign_click" {
+  function_name    = "${var.project_name}-log-campaign-click-${var.environment}"
+  role             = aws_iam_role.lambda_exec.arn
+  filename         = data.archive_file.log_click.output_path
+  source_code_hash = data.archive_file.log_click.output_base64sha256
+  handler          = "log_campaign_click.handler"
+  runtime          = "python3.12"
+  timeout          = 10
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["cognito-idp:ListUsers"]
-      Resource = aws_cognito_user_pool.main.arn
-    }]
-  })
+  environment {
+    variables = {
+      DYNAMODB_TABLE       = aws_dynamodb_table.click_log.name
+      CAMPAIGNS_TABLE      = aws_dynamodb_table.campaigns.name
+      CAMPAIGN_DEDUP_TABLE = aws_dynamodb_table.campaign_click_dedup.name
+    }
+  }
+}
+
+resource "aws_lambda_function" "manage_campaign" {
+  function_name    = "${var.project_name}-manage-campaign-${var.environment}"
+  role             = aws_iam_role.lambda_exec.arn
+  filename         = data.archive_file.log_click.output_path
+  source_code_hash = data.archive_file.log_click.output_base64sha256
+  handler          = "manage_campaign.handler"
+  runtime          = "python3.12"
+  timeout          = 10
+
+  environment {
+    variables = {
+      CAMPAIGNS_TABLE = aws_dynamodb_table.campaigns.name
+      APP_BASE        = "https://dmmywcvdfo0fv.cloudfront.net"
+    }
+  }
 }
 
 resource "aws_lambda_permission" "apigw_get_leaderboard" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.get_leaderboard.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "apigw_log_campaign_click" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.log_campaign_click.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "apigw_manage_campaign" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.manage_campaign.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
 }

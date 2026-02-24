@@ -188,7 +188,7 @@
               const auth = await respondToOtp(this.session, this.email, this.code);
               saveTokens({ id_token: auth.IdToken, access_token: auth.AccessToken, refresh_token: auth.RefreshToken });
               const p = new URLSearchParams(window.location.search);
-              window.location.href = p.get('next') || 'index.html';
+              window.location.href = p.get('next') || 'profile.html';
             }
           } catch (err) {
             console.error('[login] verifyCode:', err.code, err.message);
