@@ -14,6 +14,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="js/auth.js"></script>
+  <script src="js/marketcap.js"></script>
   <style>
     [x-cloak] { display: none !important; }
 
@@ -210,17 +211,19 @@
 
               <!-- Left: All Campaigns total -->
               <div class="flex-1 flex flex-col items-center gap-1 text-center px-6 py-4 border border-[#a5acff]/20">
+                <p class="text-xs text-[#a5acff] uppercase tracking-widest mb-2">All Campaigns</p>
                 <p class="text-5xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
-                   x-text="String(globalCount).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
-                <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1">All Campaigns</p>
+                   x-text="formatMarketCapRounded(globalCount)">—</p>
+                <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-2">Market Cap Impact*</p>
               </div>
 
               <!-- Right: This campaign -->
               <div class="flex-1 flex flex-col items-center gap-1 text-center px-6 py-4 border border-[#a5acff]/20">
-                <p class="text-5xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
-                   x-text="String(campaignCount).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
-                <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1"
+                <p class="text-xs text-[#a5acff] uppercase tracking-widest mb-2"
                    x-text="campaignName ? campaignName : 'This Campaign'"></p>
+                <p class="text-5xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
+                   x-text="formatMarketCapRounded(campaignCount)">—</p>
+                <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-2">Market Cap Impact*</p>
               </div>
 
             </div>
@@ -229,11 +232,10 @@
           <!-- Single counter when no campaign is active -->
           <template x-if="campaignId === 'none'">
             <div class="flex flex-col items-center gap-1 text-center">
+              <p class="text-xs text-[#a5acff] uppercase tracking-widest mb-2">All Campaigns</p>
               <p class="text-6xl font-black tabular-nums text-[#ffed61] leading-none counter-animate"
-                 x-text="String(globalCount).padStart(10, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')">—</p>
-              <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-1">
-                total actions recorded on this site
-              </p>
+                 x-text="formatMarketCapRounded(globalCount)">—</p>
+              <p class="text-xs text-[#a5acff] uppercase tracking-widest mt-2">Market Cap Impact*</p>
             </div>
           </template>
 
@@ -450,7 +452,33 @@
 
       <!-- ── UNSUBSCRIBE NOW ── -->
       <section id="tab-unsubscribe" class="px-8 py-14 flex flex-col gap-14 bg-[#ffed61] text-slate-950" style="display:none;">
-        <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950">How to Resist</h1>
+
+        <!-- ── HOW THIS WORKS + START YOUR OWN CAMPAIGN ── -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+          <!-- How This Works -->
+          <div class="flex flex-col gap-2">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">How This Works</h2>
+            <p class="text-sm leading-snug text-slate-800">
+              Each link below goes directly to the cancellation page for a company that has donated to or enabled the policies we're pushing back against — <span class="font-black text-slate-950">click one, and your action is instantly counted and added to the market cap impact total.</span>
+              At an average subscription price of $15/mo, one million unsubscribes translates to an estimated <span class="font-black text-slate-950">$1.8 billion in market cap impact.</span>
+            </p>
+          </div>
+
+          <!-- Start Your Own Campaign -->
+          <div class="flex flex-col gap-2">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">Start Your Own Campaign</h2>
+            <ol class="flex flex-col gap-1 text-sm leading-snug text-slate-800 list-none">
+              <li><span class="font-black text-slate-950">1. Sign in</span> — free, no password, just your email.</li>
+              <li><span class="font-black text-slate-950">2. Go to your profile</span> and create a named campaign in one click.</li>
+              <li><span class="font-black text-slate-950">3. Copy your personal link</span> — every action taken through it counts under your campaign.</li>
+              <li><span class="font-black text-slate-950">4. Share it</span> — group chat, social, email. The leaderboard ranks campaigns by market cap impact in real time.</li>
+            </ol>
+          </div>
+
+        </div>
+
+        <hr class="section-divider-dark" />
 
         <!-- ── GROUND ZERO ── -->
         <div class="flex flex-col gap-6">
@@ -472,37 +500,37 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Amazon Prime</span>
-                  <span x-data="linkCounter('amazon-prime')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('amazon-prime')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $14.99/mo)</span>
                 </li>
                 <li x-data="linkAction('audible', 'https://help.audible.com/s/article/cancel-membership?language=en_US')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Audible</span>
-                  <span x-data="linkCounter('audible')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('audible')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $7.95/mo)</span>
                 </li>
                 <li x-data="linkAction('amazon-music', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GCRZL3F2UZMNP3T3')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Amazon Music</span>
-                  <span x-data="linkCounter('amazon-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('amazon-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $9.99/mo)</span>
                 </li>
                 <li x-data="linkAction('prime-video', 'https://www.primevideo.com/help?nodeId=GWGDSNXVPJ93UW5V')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Prime Video</span>
-                  <span x-data="linkCounter('prime-video')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('prime-video')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $8.99/mo)</span>
                 </li>
                 <li x-data="linkAction('amazon-grocery', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=T0o47frAQPUyjKryun')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Amazon Grocery</span>
-                  <span x-data="linkCounter('amazon-grocery')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('amazon-grocery')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $9.99/mo)</span>
                 </li>
                 <li x-data="linkAction('kindle-unlimited', 'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLSQ4722655M4ZEJ')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Kindle Unlimited</span>
-                  <span x-data="linkCounter('kindle-unlimited')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('kindle-unlimited')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $11.99/mo)</span>
                 </li>
               </ul>
             </div>
@@ -515,37 +543,37 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Apple Music</span>
-                  <span x-data="linkCounter('apple-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('apple-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $10.99/mo)</span>
                 </li>
                 <li x-data="linkAction('apple-news', 'https://support.apple.com/en-us/118428?device-type=mac')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Apple News+</span>
-                  <span x-data="linkCounter('apple-news')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('apple-news')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $12.99/mo)</span>
                 </li>
                 <li x-data="linkAction('apple-tv', 'https://support.apple.com/en-us/118398')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Apple TV+</span>
-                  <span x-data="linkCounter('apple-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('apple-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $9.99/mo)</span>
                 </li>
                 <li x-data="linkAction('apple-one', 'https://support.apple.com/en-us/118428?device-type=mac')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Apple One</span>
-                  <span x-data="linkCounter('apple-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('apple-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $19.95/mo)</span>
                 </li>
                 <li x-data="linkAction('apple-fitness', 'https://support.apple.com/en-us/118428?device-type=mac')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Apple Fitness+</span>
-                  <span x-data="linkCounter('apple-fitness')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('apple-fitness')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $9.99/mo)</span>
                 </li>
                 <li x-data="linkAction('apple-arcade', 'https://support.apple.com/en-us/118428?device-type=mac')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Apple Arcade</span>
-                  <span x-data="linkCounter('apple-arcade')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('apple-arcade')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $6.99/mo)</span>
                 </li>
                 <li>
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
@@ -562,25 +590,25 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from YouTube Premium</span>
-                  <span x-data="linkCounter('youtube-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('youtube-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $13.99/mo)</span>
                 </li>
                 <li x-data="linkAction('youtube-music', 'https://support.google.com/youtube/answer/6308278')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from YouTube Music</span>
-                  <span x-data="linkCounter('youtube-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('youtube-music')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $10.99/mo)</span>
                 </li>
                 <li x-data="linkAction('youtube-tv', 'https://www.youtube.com/paid_memberships')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from YouTube TV</span>
-                  <span x-data="linkCounter('youtube-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('youtube-tv')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $72.99/mo)</span>
                 </li>
                 <li x-data="linkAction('google-one', 'https://support.google.com/googleone/answer/9056360?hl=en&co=GENIE.Platform%3DAndroid')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Google One</span>
-                  <span x-data="linkCounter('google-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('google-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $2.99/mo)</span>
                 </li>
               </ul>
             </div>
@@ -593,19 +621,19 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Microsoft Office</span>
-                  <span x-data="linkCounter('microsoft-office')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('microsoft-office')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $9.99/mo)</span>
                 </li>
                 <li x-data="linkAction('xbox-gamepass', 'https://support.xbox.com/en-US/help/subscriptions-billing/manage-subscriptions/cancel-recurring-billing-or-subscription')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Xbox Game Pass</span>
-                  <span x-data="linkCounter('xbox-gamepass')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('xbox-gamepass')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $14.99/mo)</span>
                 </li>
                 <li x-data="linkAction('linkedin-premium', 'https://www.linkedin.com/help/linkedin/answer/a545578')">
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from LinkedIn Premium</span>
-                  <span x-data="linkCounter('linkedin-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('linkedin-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $39.99/mo)</span>
                 </li>
               </ul>
             </div>
@@ -618,7 +646,7 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Paramount+</span>
-                  <span x-data="linkCounter('paramount-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('paramount-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $7.99/mo)</span>
                 </li>
               </ul>
             </div>
@@ -655,7 +683,7 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Uber One</span>
-                  <span x-data="linkCounter('uber-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('uber-one')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $9.99/mo)</span>
                 </li>
               </ul>
             </div>
@@ -668,7 +696,7 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from Netflix</span>
-                  <span x-data="linkCounter('netflix')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('netflix')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $15.49/mo)</span>
                 </li>
               </ul>
             </div>
@@ -681,7 +709,7 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from ChatGPT Plus/Team</span>
-                  <span x-data="linkCounter('chatgpt-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('chatgpt-plus')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $20.00/mo)</span>
                 </li>
               </ul>
             </div>
@@ -694,7 +722,7 @@
                   <span class="text-slate-700 mr-1 text-xs">▪</span>
                   <a @click.prevent="handleClick()" href="#" :class="clicked ? 'voted' : ''" class="action-link">Unsubscribe</a>
                   <span class="text-slate-700"> from X Premium</span>
-                  <span x-data="linkCounter('x-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span>)</span>
+                  <span x-data="linkCounter('x-premium')" class="text-slate-500 text-xs ml-1">(<span x-text="count">0</span> · $8.00/mo)</span>
                 </li>
               </ul>
             </div>
@@ -879,7 +907,7 @@
         <div class="flex flex-col gap-2">
           <h1 class="text-4xl font-black uppercase tracking-tight text-slate-950">Top Campaigns</h1>
           <p class="text-slate-700 text-xs leading-relaxed">
-            Ranked by total actions driven. Hover over a bar to see campaign details.
+            Ranked by estimated market cap impact. Hover over a bar to see campaign details.
           </p>
         </div>
 
@@ -906,7 +934,7 @@
 
               <!-- Y-axis label -->
               <div class="flex items-center gap-2">
-                <span class="text-slate-700 text-xs uppercase tracking-widest font-bold">Actions</span>
+                <span class="text-slate-700 text-xs uppercase tracking-widest font-bold">Market Cap Impact</span>
               </div>
 
               <!-- Chart area -->
@@ -927,13 +955,13 @@
                            x-cloak
                            style="position: absolute; top: 0; left: 100%; margin-left: 6px; z-index: 9999; pointer-events: none; background: #4b5563; padding: 6px 10px; white-space: nowrap;">
                         <p class="text-xs font-black whitespace-nowrap" style="color: #3b82f6;" x-text="row.display"></p>
-                        <p class="text-xs whitespace-nowrap" style="color: #93c5fd;" x-text="row.actions + ' action' + (row.actions !== 1 ? 's' : '')"></p>
+                        <p class="text-xs whitespace-nowrap" style="color: #93c5fd;" x-text="formatMarketCapRounded(row.marketCap)"></p>
                       </div>
 
                       <!-- Bar -->
                       <div class="w-full rounded-none transition-all duration-300 cursor-default"
                            :style="`
-                             height: ${maxActions > 0 ? Math.max(4, Math.round((row.actions / maxActions) * 200)) : 4}px;
+                             height: ${maxMarketCap > 0 ? Math.max(4, Math.round((row.marketCap / maxMarketCap) * 200)) : 4}px;
                              background: ${i === 0 ? '#1e293b' : i === 1 ? '#334155' : i === 2 ? '#475569' : '#64748b'};
                            `">
                       </div>
@@ -953,7 +981,7 @@
                 <p class="text-slate-700 text-xs uppercase tracking-widest text-center mt-2 font-bold">Campaign Rank</p>
               </div>
 
-              <p class="text-slate-700 text-xs" x-text="rows.length + ' participant' + (rows.length !== 1 ? 's' : '')"></p>
+              <p class="text-slate-700 text-xs" x-text="rows.length + ' campaign' + (rows.length !== 1 ? 's' : '') + ' · total impact: ' + formatMarketCapRounded(rows.reduce((s, r) => s + r.marketCap, 0))"></p>
             </div>
           </template>
 
@@ -966,8 +994,14 @@
   </main>
 
   <!-- ═══ FOOTER ═══════════════════════════════════════════════════════════ -->
-  <footer class="py-5 px-8 text-xs text-slate-700 border-t border-slate-900 flex items-center justify-between">
-    <span>The People's Scoreboard &copy; 2025 — Built for accountability.</span>
+  <footer class="py-5 px-8 text-xs flex flex-col gap-3" style="background: #5c67ff; color: #ffed61;">
+    <span style="color: #ffed61;">The People's Scoreboard &copy; 2025 — Built for accountability.</span>
+    <p class="leading-relaxed max-w-3xl" style="color: #ffed61;">
+      * <span class="font-bold">Market Cap Impact</span> is an estimate of the cumulative stock market value destroyed by the collective unsubscriptions logged on this site.
+      Each action is assigned a dollar value based on publicly available subscriber lifetime value (LTV) models for the respective company —
+      reflecting the present value of lost future subscription revenue that analysts use to price these stocks.
+      Actual market impact will vary; this figure is an estimate intended to illustrate the scale of collective economic pressure, not a precise financial measurement.
+    </p>
   </footer>
 
   <script>
@@ -1010,6 +1044,11 @@
       setSubTab('general');
     });
 
+    // ─── Global market cap rate (set by heroCounters, read by leaderboard) ───
+    // Stores the average market cap impact per action across all buttons.
+    // Used to convert per-campaign raw action counts into market cap estimates.
+    let _avgMarketCapPerAction = 0;
+
     // ─── Shared user votes cache ──────────────────────────────────────────────
     let _votedButtons = null;
     async function getVotedButtons() {
@@ -1039,32 +1078,45 @@
     // ─── Hero counters (global + optional campaign panel) ────────────────────
     function heroCounters() {
       return {
-        globalCount:   0,
-        campaignCount: 0,
+        globalCount:   0,   // weighted market cap impact — all campaigns (USD)
+        campaignCount: 0,   // weighted market cap impact — this campaign (USD)
         campaignId:    getCampaignId(),
         campaignName:  getCampaignName(),
 
         async init() {
-          // Always fetch global count from all buttons in parallel
+          // Fetch per-button click counts in parallel, then compute weighted market cap
+          let totalActions = 0;
           try {
-            const results = await Promise.all(
+            const counts = await Promise.all(
               ALL_BUTTON_IDS.map(id =>
                 fetch(`${CONFIG.apiEndpoint}/click-count?button_id=${id}`)
                   .then(r => r.json()).then(d => d.count ?? 0).catch(() => 0)
               )
             );
-            this.globalCount = results.reduce((a, b) => a + b, 0);
+            // Build { buttonId: count } map and compute global market cap impact
+            const clicksByButton = {};
+            ALL_BUTTON_IDS.forEach((id, i) => { clicksByButton[id] = counts[i]; });
+            totalActions         = counts.reduce((a, b) => a + b, 0);
+            this.globalCount     = calcTotalMarketCapImpact(clicksByButton);
+            // Expose average rate for leaderboard to use
+            _avgMarketCapPerAction = totalActions > 0 ? this.globalCount / totalActions : 0;
           } catch { this.globalCount = 0; }
 
           // If a campaign ref is active, look up its action count from the leaderboard
+          // and derive its market cap share proportionally from the global impact
           if (this.campaignId !== 'none') {
             try {
               const res  = await fetch(`${CONFIG.apiEndpoint}/leaderboard`);
               const data = await res.json();
               const row  = (data.leaderboard ?? []).find(r => r.campaign_id === this.campaignId);
-              this.campaignCount = row ? row.actions : 0;
-              // If we didn't get a name from the URL, try the leaderboard display name
-              if (!this.campaignName && row) this.campaignName = row.display;
+              if (row) {
+                // Proportional share: campaign actions / total actions × global market cap impact
+                const campaignActions  = row.actions ?? 0;
+                this.campaignCount     = totalActions > 0
+                  ? Math.round((campaignActions / totalActions) * this.globalCount * 100) / 100
+                  : 0;
+                if (!this.campaignName) this.campaignName = row.display;
+              }
             } catch { this.campaignCount = 0; }
           }
         },
@@ -1141,18 +1193,28 @@
     // ─── Leaderboard ──────────────────────────────────────────────────────────
     function leaderboard() {
       return {
-        rows:       [],
-        maxActions: 0,
-        loading:    true,
-        error:      false,
+        rows:          [],
+        maxMarketCap:  0,
+        loading:       true,
+        error:         false,
 
         async init() {
           try {
             const res  = await fetch(`${CONFIG.apiEndpoint}/leaderboard`);
             if (!res.ok) throw new Error('non-200');
             const data = await res.json();
-            this.rows       = data.leaderboard ?? [];
-            this.maxActions = this.rows.length > 0 ? this.rows[0].actions : 0;
+            const raw  = data.leaderboard ?? [];
+            // Annotate each row with its estimated market cap impact.
+            // _avgMarketCapPerAction is set by heroCounters(); if it hasn't
+            // resolved yet we wait briefly and retry once.
+            if (_avgMarketCapPerAction === 0 && raw.length > 0) {
+              await new Promise(r => setTimeout(r, 800));
+            }
+            this.rows = raw.map(row => ({
+              ...row,
+              marketCap: Math.round(row.actions * _avgMarketCapPerAction),
+            }));
+            this.maxMarketCap = this.rows.length > 0 ? this.rows[0].marketCap : 0;
           } catch {
             this.error = true;
           } finally {
